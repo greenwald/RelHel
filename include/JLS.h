@@ -1,6 +1,8 @@
 #ifndef __JLS__h
 #define __JLS__h
 
+#include <string>
+
 /// \class JLS
 /// \brief Holds J, L, S for objects that need them
 /// \author Daniel Greenwald
@@ -27,6 +29,10 @@ private:
     unsigned S_;
 
 };
+
+/// convert to string
+inline std::string to_string(const JLS& jls)
+{ return "(" + std::to_string(jls.J()) + ";" + std::to_string(jls.L()) + "," + std::to_string(jls.S()) + ")"; }
 
 /// equality operator
 const bool operator==(const JLS& lhs, const JLS& rhs)

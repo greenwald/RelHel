@@ -1,66 +1,75 @@
 #ifndef TFracNum_h
 #define TFracNum_h
-/*!
- \class TFracNum
- \brief Fractional Number.
-
- Fractional number with numerator and denominator represented
- by their prime number decomposition.\n
- Some arithmetical operations are included but \b not complete.
-
- \author Jan.Friedrich@ph.tum.de
- */
 
 #include <string>
 #include <vector>
 
-
 const char IOUTSTRING[3] = "%d";
 
-//
-// Fractional number representation by the prime number
-// decomposition of the nominator and the denominator
-//
+/// \typedef PrimeFactors
+/// maps prime factor to exponent
+using PrimeFactors = std::map<unsigned, unsigned>;
+
+/// \return sign factor
+int sign_factor(int n, int d);
+
+/// \return prime number decomposition of unsigned integer
+PrimeFactors decompose(unsigned n);
+
+/// \return prime number decomposition of factorial of unsigned integer
+PrimeFactors decompose_factorial(unsigned n);
+
+/// \return multiplication assignment
+PrimeFactors& operator*=(PrimeFactors& A, const PrimeFactors& B);
+
+/// \class TFracNum
+/// \brief Fractional Number.
+///
+/// Fractional number with numerator and denominator represented by
+/// their prime number decomposition. Some arithmetical operations are
+/// included but \b not complete.
+///
+/// \author Jan.Friedrich@ph.tum.de, Daniel Greenwald
 class TFracNum
 {
 
 public:
 
-    //! Default constructor with numerator and denominator set to 1
-    TFracNum()
-        : _NOM(),
-          _DEN(),
-          _signPrefac(1),
-          _numerator(1),
-          _nomCacheRebuildRequired(false),
-          _denominator(1),
-          _denCacheRebuildRequired(false),
-          _value(1.),
-          _valueCacheRebuildRequired(false) { }
+    /// default constructor
+    TFracNum() = default;
 
-    //! Constructor using the internal representation of the class
-    TFracNum(const std::vector<long>& N, //! Field of exponents of the numerator's prime numbers up to mN
-             const std::vector<long>& D, //! Field of exponents of the denominator's prime numbers up to mD
-             long s /*! Sign variable <br>
-	                    1 or -1 depending on the sign <br>
-	                    \it s =-6666 means "undetermined" (this is for example a
-	                    consequence of a division zero by zero)  <br>
-	                    -7777 means "infinity" (for example a consequence
-	                    of division by zero)
-	                */
-            );
+    /// vector constructor
+    /// \param N exponents of the numerator's prime numbers
+    /// \param D exponents of the denominator's prime numbers
+    /// \param s sign of number
+    TFracNum(const PrimeFactors& N, const PrimeFactors& D, double s);
 
-    //! Constructor by the integer values of the numerator and denominator
-    TFracNum(long inom, //! numerator
-             long iden); //! denominator
+    /// int constructor
+    /// \param N numerator
+    /// \param D denominator
+    TFracNum(int N, int D)
+        : TFracNum(decompose(abs(N)), decompose(abs(D)), sign_factor(N, D)) {}
 
-    //! Constructor when numerator and denominator are factorial numbers, N!/D!
-    /*! This method is much faster than giving the factorials to
-     TFracNum(inom, iden) */
-    TFracNum(const long& N, //! numerator
-             const long& D, //! denominator
-             const std::string& s); //! control string. For described function, set to "factorial", otherwise the number is set to 1
+    /// construct TFracNum from numerator and demoninator specified by factorials
+    /// \param N numerator = N!
+    /// \param D denimnator  = D!
+    static TFracNum factorial_TFracNum(int N, int D)
+    { return TFracNum(decompose_factorial(abs(N)), decompose_factorial(abs(D)), sign_factor(N, D)); }
 
+    /// \return Numerator_
+    const PrimeFactors& numerator() const
+    { return Numerator_; }
+
+    /// \return Denominator_
+    const PrimeFactors& denominator() const
+    { return Denominator_; }
+
+    double sign() const
+    { return Sign_; }
+
+
+
+    
     //! Largest common divisor of numerator and denominator
     long DenomCommonDivisor(const TFracNum& rhs) const;
 
@@ -85,9 +94,6 @@ public:
     /*! In case of success, return true. In case this does not lead to a
      fractional number, the number is left untouched and return value is false*/
     bool Sqrt();
-
-    //! Flip sign of number
-    bool FlipSign();
 
     //! Force sign to plus
     bool Abs();
@@ -132,37 +138,32 @@ private:
     // nom/NOM is taken when the numerator is meant
     //
 
+    PrimeFactors Numerator_;
+    PrimeFactors Denominator_;
+    
     // Prime number decomposition of numerator. Field length is maxPrimNom,
     //  NOM[0] is the exponent of 2, NOM[1] of 3, and so on.
-    std::vector<long> _NOM;
+    std::vector<int> NumeratorExponents_;
 
     // Prime number decomposition of denominator, analogue to NOM
-    std::vector<long> _DEN;
-
-
+    std::vector<int> DenominatorExponents_;
 
     // Prefactor, including sign
-    // Negative fractional number have sign_prefrac=-1
-    // Special cases:
-    // Division by zero      (<=> infinity)     => sign_prefac=-7777
-    // Division zero by zero (<=> undetermined) => sign_prefac=-6666
-    //TODO: Get rid of the special cases and use _nan and _inf flags
-    long _signPrefac;
+    double SignPrefactor_{1};
 
     // Integers of numerator and denominator
-    mutable long   _numerator;
-    mutable bool   _nomCacheRebuildRequired;
-    mutable long   _denominator;
-    mutable bool   _denCacheRebuildRequired;
-    mutable double _value;
-    mutable bool   _valueCacheRebuildRequired;
+    mutable int   _numerator_{0};
+    mutable bool   _nomCacheRebuildRequired{true};
+    mutable int   _denominator{1};
+    mutable bool   _denCacheRebuildRequired{true};
+    mutable double _value{0};
+    mutable bool   _valueCacheRebuildRequired{true};
 
     void resetAllCaches() const;
 
-    static void removeZerosFromVector(std::vector<long>& vector);
-    static long getNumberFromFactorization(const std::vector<long>& vector);
+    static int getNumberFromFactorization(const std::vector<int>& vector);
 
-    static bool _debug;
+    static bool Debug_;
 
 public:
 
@@ -175,8 +176,26 @@ public:
 
 };
 
-TFracNum invert(const TFracNum& n)
-{ TFracNum temp = n; temp.Invert(); return temp; }
+/// unary minus
+TFracNum operator-(const TFracNum& f)
+{ return TFracNum(f.numerator(), f.denominator(), -f.sign()); }
+
+/// multiple sign factors
+double multiply_sign_factors(double s1, double s2);
+
+/// addition assignment
+TFracNum& operator+=(TFracNum& lhs, const TFracNum& rhs)
+{
+    return lhs = TFracNum(lhs.numerator() * rhs.denominator() + rhs.numerator() * lhs.denominator(),
+                          lhs.denominator() * rhs.denominator(), multiply_sign_factors(lhs.sign(), rhs.sign()));
+}
+
+/// invert sign
+double invert_sign_factor(double s);
+
+/// invert TFracNum
+TFracNum invert(const TFracNum& f)
+{ return TFracNum(f.denominator(), f.numerator(), invert_sign_factor(f.sign())); }
 
 inline
 std::ostream&

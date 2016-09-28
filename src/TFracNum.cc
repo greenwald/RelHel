@@ -1,17 +1,108 @@
 #include "TFracNum.h"
 
-#include <iostream>
-#include <string>
-#include <stdio.h>
+#include <cmath>
 #include <cstdlib>
+#include <iostream>
+#include <numeric>
+#include <stdio.h>
+#include <string>
 
-#include <primeNumbers.h>
+namespace prime_cache {
 
-using namespace std;
-using rpwa::operator<<;
+    // initialize with first primes up to 1000
+    static std::vector<int> primes = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29,
+                                      31, 37, 41, 43, 47, 53, 59, 61, 67,
+                                      71, 73, 79, 83, 89, 97, 101, 103, 107,
+                                      109, 113, 127, 131, 137, 139, 149, 151,
+                                      157, 163, 167, 173, 179, 181, 191, 193,
+                                      197, 199, 211, 223, 227, 229, 233, 239,
+                                      241, 251, 257, 263, 269, 271, 277, 281,
+                                      283, 293, 307, 311, 313, 317, 331, 337,
+                                      347, 349, 353, 359, 367, 373, 379, 383,
+                                      389, 397, 401, 409, 419, 421, 431, 433,
+                                      439, 443, 449, 457, 461, 463, 467, 479,
+                                      487, 491, 499, 503, 509, 521, 523, 541,
+                                      547, 557, 563, 569, 571, 577, 587, 593,
+                                      599, 601, 607, 613, 617, 619, 631, 641,
+                                      643, 647, 653, 659, 661, 673, 677, 683,
+                                      691, 701, 709, 719, 727, 733, 739, 743,
+                                      751, 757, 761, 769, 773, 787, 797, 809,
+                                      811, 821, 823, 827, 829, 839, 853, 857,
+                                      859, 863, 877, 881, 883, 887, 907, 911,
+                                      919, 929, 937, 941, 947, 953, 967, 971,
+                                      977, 983, 991, 997};
 
-bool TFracNum::_debug = false;
+    //-------------------------
+    bool is_prime(unsigned p)
+    {
+        // check for upper limit of search range: p / 2
+        auto last = std::upper_bound(primes.begin(), primes.end(), 0.5 * p);
+        // search if any prime divides p
+        for (auto it = primes.begin(); it != last; ++it)
+            if (p % *it == 0)
+                return false;
+        // if couldn't search high enough range, through
+        if (last == primes.end())
+            throw;
+        // else p is prime
+        return true;
+    }
 
+    //-------------------------
+    std::vector<int>::iterator next(std::vector<int>::iterator it)
+    {
+        // increment to next prime
+        ++it;
+        // if prime available, return it
+        if (it != primes.end())
+            return it;
+        // else add to cache, brute force
+        // initialize p to next value
+        int p = primes.back() + 1;
+        // increase until prime is found
+        while (!is_prime(p)) ++p;
+        // add to cache
+        primes.push_back(p);
+        return --primes.end();
+    }
+}
+
+//-------------------------
+PrimeFactors decompose(unsigned N)
+{
+    PrimeFactors PF;
+    for (auto it = prime_cache::primes.begin(); N > 1; it = prime_cache::next(it)) {
+        unsigned n = 0;
+        while (N % *it == 0) {
+            ++n;
+            N /= *it;
+        }
+        if (n > 0)
+            PrimeFactors[*it] == n;
+    }
+    return PF;
+}
+
+//-------------------------
+PrimeFactors decompose_factorial(unsigned n)
+{
+    std::vector<PrimeFactors> PFs;
+    PFs.reserve(n - 1);
+    while (n > 1) PFs.push_back(decompose(n--));
+    return std::accumulate(PFs.begin(), PFs.end(), PrimeFactors(),
+                           [](PrimeFactors& PF, const PrimeFactors& pf)
+                           { return PF *= pf; });
+}
+
+//-------------------------
+PrimeFactors& operator*=(PrimeFactors& A, const PrimeFactors& B)
+{
+    for (const auto& p_e : B)
+        A[p_e.first] += p_e.second;
+    return A;
+}
+
+bool TFracNum::Debug_ = false;
 
 const TFracNum TFracNum::Zero = TFracNum(0, 1);
 const TFracNum TFracNum::One = TFracNum(1, 1);
@@ -19,173 +110,65 @@ const TFracNum TFracNum::Two = TFracNum(2, 1);
 const TFracNum TFracNum::mTwo = TFracNum(-2, 1);
 const TFracNum TFracNum::Quarter = TFracNum(1, 4);
 
-
 const char* SQUAREROOT_CHAR = "#";
 
-
-TFracNum::TFracNum(const vector<long>& N, const vector<long>& D, long s)
-    : _NOM(N),
-      _DEN(D),
-      _signPrefac(s),
-      _numerator(0),
-      _nomCacheRebuildRequired(true),
-      _denominator(0),
-      _denCacheRebuildRequired(true),
-      _value(0.),
-      _valueCacheRebuildRequired(true)
+//-------------------------
+std::string to_string(const std::vector<long>& V)
 {
-    if (_debug) {
-        printDebug << "NOM: " << _NOM << endl;
-        printDebug << "DEN: " << _DEN << endl;
-    }
+    return std::accumulate(V.begin(), V.end(), std::string(),
+                           [](std::string& s, long v)
+                           {return s += " " + std::to_string(v);}).erase(0, 1);
 }
 
-
-TFracNum::TFracNum(const long& N, const long& D, const string& s)
-    : _NOM(),
-      _DEN(),
-      _signPrefac(1),
-      _numerator(0),
-      _nomCacheRebuildRequired(true),
-      _denominator(0),
-      _denCacheRebuildRequired(true),
-      _value(0.),
-      _valueCacheRebuildRequired(true)
+//-------------------------
+PrimeFactors& remove_zeroes(PrimeFactors& PF)
 {
-    if (s == "factorial") {
-        if (_debug) {
-            cout << s << endl;
-        }
-        if (N == D) {
-            return;
-        }
-        long Low = N;
-        long High = D;
-        if (N > D) {
-            Low = D;
-            High = N;
-        }
-        for (long fac = Low + 1; fac <= High; fac++) {
-            rpwa::primeNumbers::entryType rest = fac;
-            size_t fmax = 0;
-            while (rest != 1) {
-                const rpwa::primeNumbers::entryType& prime = rpwa::primeNumbers::instance().primeNumber(fmax);
-                while (rest % prime == 0) {
-                    if (N < D) {
-                        if (fmax >= _DEN.size()) {
-                            _DEN.resize(fmax + 1, 0);
-                        }
-                        _DEN[fmax]++;
-                    } else {
-                        if (fmax >= _NOM.size()) {
-                            _NOM.resize(fmax + 1, 0);
-                        }
-                        _NOM[fmax]++;
-                    }
-                    rest /= prime;
-                }
-                fmax++;
-            }
-        }
-    }
+    for (auto it = PF.begin(); it != PF.end();)
+        if (it->second == 0)
+            it = PF.erase(it);
+        else
+            ++it;
+    return PF;
 }
 
-
-TFracNum::TFracNum(long inom, long iden)
-    : _NOM(),
-      _DEN(),
-      _signPrefac(0),
-      _numerator(0),
-      _nomCacheRebuildRequired(true),
-      _denominator(0),
-      _denCacheRebuildRequired(true),
-      _value(0.),
-      _valueCacheRebuildRequired(true)
+//-------------------------
+TFracNum::TFracNum(const PrimeFactors& N, const PrimeFactors& D, double s)
+    : NumeratorExponents_(N), DenominatorExponents_(D), Sign_(s)
 {
-
-    if (_debug) {
-        cout << "Initializing with " << inom << "," << iden << endl;
-    }
-
-    if (inom == 0) {
-        if (iden == 0) {
-            _signPrefac = -6666;
-            return;
-        }
-        _value = 0.;
-        _valueCacheRebuildRequired = false;
-        return;
-    }
-
-    if (iden == 0) {
-        _signPrefac = -7777;
-        return;
-    }
-
-    _signPrefac = 1;
-    if (inom < 0) {
-        _signPrefac *= -1;
-        inom *= -1;
-    }
-    if (iden < 0) {
-        _signPrefac *= -1;
-        iden *= -1;
-    }
-
-    rpwa::primeNumbers::entryType rest_nom = inom;
-    size_t maxPrimNom = 0;
-    while (rest_nom != 1) {
-        const rpwa::primeNumbers::entryType& prime = rpwa::primeNumbers::instance().primeNumber(maxPrimNom);
-        while (rest_nom % prime == 0) {
-            if (maxPrimNom >= _NOM.size()) {
-                _NOM.resize(maxPrimNom + 1, 0);
-            }
-            _NOM[maxPrimNom]++;
-            rest_nom /= prime;
-        }
-        maxPrimNom++;
-    }
-    if (rest_nom != 1) {
-        std::cout << "(" << inom << "/" << iden << ") overflow?? Aborting..." << endl;
-        cout << endl << (*this) << endl;
-        throw;
-    } else {
-        rpwa::primeNumbers::entryType rest_den = iden;
-        size_t maxPrimDen = 0;
-        while (rest_den != 1) {
-            const rpwa::primeNumbers::entryType& prime = rpwa::primeNumbers::instance().primeNumber(maxPrimDen);
-            while (rest_den % prime == 0) {
-                if (maxPrimDen >= _DEN.size()) {
-                    _DEN.resize(maxPrimDen + 1, 0);
-                }
-                _DEN[maxPrimDen]++;
-                rest_den /= prime;
-            }
-            maxPrimDen++;
-        }
-        if (rest_den != 1) {
-            std::cout << "(" << inom << "/" << iden << ") overflow?? Aborting..." << endl;
-            cout << endl << (*this) << endl;
-            throw;
-        } else {
-            const size_t minPrim = min(_NOM.size(), _DEN.size());
-            for (size_t ip = 0; ip < minPrim; ip++) {
-                if (_NOM[ip] != 0 and _DEN[ip] != 0) {
-                    if (_DEN[ip] > _NOM[ip]) {
-                        _DEN[ip] -= _NOM[ip];
-                        _NOM[ip] = 0;
-                    } else {
-                        _NOM[ip] -= _DEN[ip];
-                        _DEN[ip] = 0;
-                    }
-                }
-            }
-            TFracNum::removeZerosFromVector(_NOM);
-            TFracNum::removeZerosFromVector(_DEN);
+    // cancel common terms
+    for (auto& p_e : NumeratorExponents_) {
+        auto it = DenominatorExponents_.find(p_e.first);
+        if (it != DenominatorExponents_.end()) {
+            auto common = std::min(it->second, p_e.second);
+            p_e.second -= common;
+            it->second -= common;
         }
     }
+    remove_zeroes(NumeratorExponents_);
+    remove_zeroes(DenominatorExponents_);
 }
 
+//-------------------------
+double sign_factor(int n, int d)
+{
+    if (n != 0 and d != 0)
+        return sign_of(n * d);
+    if (d != 0)
+        return 0;
+    if (n == 0)
+        return std::numeric_limits<double>::quiet_NaN();
+    return std::numeric_limits<double>::infinity();
+}
+
+//-------------------------
+double invert_sign_factor(double s)
+{
+    if (s == 0)
+        return std::numeric_limits<double>::infinity();
+    if (std::isinf(s))
+        return 0;
+    return s;
+}
 
 const long& TFracNum::GetNumerator() const
 {
@@ -331,17 +314,6 @@ bool TFracNum::Sqrt()
     resetAllCaches();
     return true;
 }
-
-
-bool TFracNum::FlipSign()
-{
-    _signPrefac *= -1;
-    if (not _valueCacheRebuildRequired) {
-        _value      *= -1.;
-    }
-    return true;
-}
-
 
 bool TFracNum::Abs()
 {
@@ -556,12 +528,11 @@ TFracNum& TFracNum::operator*=(const TFracNum& rhs)
     return *this;
 }
 
-
 std::ostream& TFracNum::Print(std::ostream& out) const
 {
     if (_debug) {
-        out << "nom prime list: " << _NOM.size() << ",pointer " << _NOM << endl;
-        out << "den prime list: " << _DEN.size() << ",pointer " << _DEN << endl;
+        out << "nom prime list: " << _NOM.size() << ",pointer " << to_string(_NOM) << endl;
+        out << "den prime list: " << _DEN.size() << ",pointer " << to_string(_DEN) << endl;
         out << "NOM:";
         for (size_t i = 0; i < _NOM.size(); i++) {
             out << _NOM[i] << ",";

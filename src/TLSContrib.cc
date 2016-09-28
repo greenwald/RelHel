@@ -1,5 +1,8 @@
 #include "TLSContrib.h"
 
+#include "MathUtils.h"
+#include "TLSAmpl.h"
+
 #include <iostream>
 #include <stdexcept>
 
@@ -29,7 +32,7 @@ TLSContrib::TLSContrib(const TLSAmpl& A, int delta, const TFracNum& scfac)
                  << "Ampldelta" << A.delta()
                  << " delta" << Delta_ << ", sigrev" << signReversal;
 
-        PolynomialTerms_.push_back(scfac * t.GetPreFac(), {t.GetGamS(), t.GetGamSig()});
+        PolynomialTerms_.emplace_back(scfac * t.GetPreFac(), t.GetGamS(), t.GetGamSig());
         if (signReversal)
             PolynomialTerms_.back().PrefactorSquared.FlipSign();
         
@@ -38,149 +41,115 @@ TLSContrib::TLSContrib(const TLSAmpl& A, int delta, const TFracNum& scfac)
             cout << " -> Normfactor: " << NormFactor_.FracStringSqrt() << endl;
     }
 
-    PureRelativistic_ = (NormFactor_ == TFracNum::Zero);
+    PureRelativistic_ = NormFactor_ == TFracNum::Zero;
     
     if (PureRelativistic_)
         NormFactor_ = TFracNum::One;
-    else {
-        auto  NormInv = invert(NormFactor_);
-        for (auto& p : PolynomialTerms_)
-            p.PrefactorSquared *= NormInv;
-    }
+    else
+        PolynomialTerms_ *= invert(NormFactor_);
 }
 
 //-------------------------
 void TLSContrib::Add(const TLSContrib& rhs, bool particleExchange)
 {
-    if (_J != rhs._J or _L != rhs._L or _S != rhs._S) {
-        std::cout << "TLSContrib::Add : Something is wrong, trying to add different"
-                  << " (J;L,S): (" << _J << ";" << _L << "," << _S << ") != ("
-                  << rhs._J << ";" << rhs._L << "," << rhs._S << ")" << endl;
-        throw;
-    }
+    if (static_cast<const JLS&>(rhs) != *this)
+        throw std::runtime_error("TLSContrib::Add : Trying to add different (J;L,S): "
+                                 + to_string(static_cast<const JLS&>(rhs)) + " != "
+                                 + to_string(static_cast<const JLS&>(*this)));
 
     //
     // Include normalisation factor and the factor (1/2)**2 in the squared
     // representation of prefactors
     //
 
-    for (size_t i = 0; i < _polynomialTerms.size(); i++) {
-        _polynomialTerms[i].squareOfPrefactor *= TFracNum::Quarter * _NormFactor;
-    }
+    PolynomialTerms_ *= TFracNum::Quarter * NormFactor_;
 
-    for (size_t ib = 0; ib < rhs.GetNterms(); ib++) {
-        bool termSummed = false;
-        for (size_t i = 0; i < _polynomialTerms.size(); i++) {
-            if (not termSummed and _cNum == rhs._cNum                                            and
-                    (
-                        (particleExchange                                                              and
-                         _polynomialTerms[i].exponentOfGammaS     == rhs.getPolynomialTerms()[ib].exponentOfGammaSigma and
-                         _polynomialTerms[i].exponentOfGammaSigma == rhs.getPolynomialTerms()[ib].exponentOfGammaS
-                        )                                                                              or
-                        (
-                            not particleExchange                                                          and
-                            _polynomialTerms[i].exponentOfGammaS     == rhs.getPolynomialTerms()[ib].exponentOfGammaS     and
-                            _polynomialTerms[i].exponentOfGammaSigma == rhs.getPolynomialTerms()[ib].exponentOfGammaSigma
-                        )
-                    ) ) {
-                termSummed = true;
-                TFracNum bterm = TFracNum::Quarter * rhs._NormFactor * rhs.getPolynomialTerms()[ib].squareOfPrefactor;
+    auto P = (particleExchange) ? swap_exponents(rhs.polynomialTerms()) : rhs.polynomialTerms();
+    
+    if (rhs.contractionNumber() == contractionNumber())
+        for (auto it = P.begin(); it != P.end(); ) {
 
-                if (_J % 2) {
+            // find term with matching exponents
+            auto it2 = std::find(PolynomialTerms_.begin(), PolynomialTerms_.end(),
+                                 [&it](const PolynomialTerm& p){return p.Exponents == it->Exponents;});
+
+            // if match found, add term in
+            if (it2 != PolynomialTerms_.end()) {
+                auto bterm = TFracNum::Quarter * rhs.normFactor() * it->PrefactorSquared;
+                if (is_even(J()))
                     bterm.FlipSign();
-                }
-
-                _polynomialTerms[i].squareOfPrefactor = bterm.SumSignedRoots(_polynomialTerms[i].squareOfPrefactor);
-
-            }
+                it2->PrefactorSquared = bterm.SumSignedRoots(it2->PrefactorSquared);
+                it = P.erase(it);
+            } else // skip to next term
+                ++it;
         }
-        if (not termSummed) {
 
-            polynomialTerms factor(rhs.getPolynomialTerms()[ib]);
-            factor.squareOfPrefactor *= TFracNum::Quarter * rhs._NormFactor;
-            if (_J % 2) {
-                if (not factor.squareOfPrefactor.FlipSign()) {
-                    throw std::runtime_error("Flipping sign failed.");
-                }
-            }
-            if (particleExchange) {
-                factor.swapExponents();
-            }
-            _polynomialTerms.push_back(factor);
-        }
+    // loop over remaining terms not yet added in, and add them as new terms
+    P *= TFracNum::Quarter * rhs.normFactor();
+    for (const auto& p : P) {
+        if (is_even(J()))
+            if (!p.PrefactorSquared.FlipSign())
+                throw std::runtime_error("Flipping sign failed.");
+        PolynomialTerms_.push_back(p);
     }
 
-    //
     // Eliminate zero entries
-    //
-    for (size_t i = _polynomialTerms.size(); i > 0; --i) {
-        if (_polynomialTerms[i - 1].squareOfPrefactor == TFracNum::Zero) {
-            _polynomialTerms.erase(_polynomialTerms.begin() + (i - 1));
-        }
-    }
-
-    //
+    PolynomialTerms_.erase(std::find_if(PolynomialTerms_.begin(), PolynomialTerms_.end(), is_zero), PolynomialTerms_.end());
+    
     // Recalculate Normalization Factor
-    //
-    _NormFactor = TFracNum::Zero;
-    for (size_t i = 0; i < _polynomialTerms.size(); i++) {
-        _NormFactor = _NormFactor.SumSignedRoots(_polynomialTerms[i].squareOfPrefactor);
-    }
+    NormFactor_ = std::accumulate(PolynomialTerms_.begin(), PolynomialTerms_.end(), TFracNum::Zero,
+                                  [](TFracNum& N, const PolynomialTerms& p)
+                                  {return N = N.SumSignedRoots(p.PrefactorSquared);});
 
-    //
+    PureRelativistic_ = NormFactor_ == TFracNum::Zero;
+    
     // Apply normalization
-    //
-    if (_NormFactor == TFracNum::Zero) {
-        _pureRelativistic = true;
-        _NormFactor = TFracNum::One;
-    } else {
-        _pureRelativistic = false;
-        TFracNum NormInv = _NormFactor;
-        NormInv.Invert();
-        for (size_t i = 0; i < _polynomialTerms.size(); i++) {
-            _polynomialTerms[i].squareOfPrefactor *= NormInv;
-        }
-    }
+    if (PureRelativistic_)
+        NormFactor_ = TFracNum::One;
+    else
+        PolynomialTerms_ *= invert(NormFactor_);
 }
 
+//-------------------------
+std::string exponent_string(const std::string& s, int n)
+{ return (n == 0) ? "" : s + (n == 1) ? "" : "^" + std::to_string(n); }
 
-void TLSContrib::Print() const
+//-------------------------
+std::string to_string(const PolynomialTerms& p)
 {
-    if (_cNum == 1) {
-        cout << "g" << "[" << _cNum << "] (";
+    return p.PrefactorSquared.FracStringSqrt()
+        + exponent_string(" g_0", p.Exponents[0])
+        + exponent_string(" g_1", p.Exponents[1]);
+}
+        
+//-------------------------
+std::string to_string(const PolynomialTerms& P)
+{ return P.empty() ? "" : std::accumulate(P.begin(), P.end(), std::string(), to_string); }
+
+//-------------------------
+std::string to_string(const TLSContrib& C)
+{
+    std::string s = "";
+    switch (C.contractionNumber()) {
+    case 1:
+        s = "g";
+        break;
+    case 2:
+        s = "f";
+        break;
+    case 3:
+        s = "h";
+        break;
+    default:
+        throw;
     }
-    if (_cNum == 2) {
-        cout << "f" << "[" << _cNum << "] (";
-    }
-    if (_cNum >= 3) {
-        cout << "h" << "[" << _cNum << "] (";
-    }
-    cout << _J << ")" << _L << _S << "( ";
-    if (not _pureRelativistic) {
-        cout << _NormFactor.FracStringSqrt() << " ) ( ";
-    }
-    if (_polynomialTerms.empty()) {
-        cout << "0";
-    }
-    for (size_t iT = 0; iT < _polynomialTerms.size(); iT++) {
-        const polynomialTerms& factor = _polynomialTerms[iT];
-        cout << factor.squareOfPrefactor.FracStringSqrt() << " ";
-        if (factor.exponentOfGammaS) {
-            if (factor.exponentOfGammaS == 1) {
-                cout << " gs";
-            } else {
-                cout << " gs^" << factor.exponentOfGammaS;
-            }
-        }
-        if (factor.exponentOfGammaSigma) {
-            if (factor.exponentOfGammaSigma == 1) {
-                cout << " gsig";
-            } else {
-                cout << " gsig^" << factor.exponentOfGammaSigma;
-            }
-        }
-    }
-    cout << " )" << endl;
+    s += "[" + ContractionNumber_ + "]" + to_string(static_cast<const JLS&>(C));
+    if (!PureRelativistic_)
+        s += " (" << C.normFactor().FracStringSqrt() + ")";
+    s += to_string(PolynomialTerms_);
+    if (PolynomialTerms_.empty())
+        s += "(0)";
+    return s;
 }
 
 

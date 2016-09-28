@@ -6,6 +6,7 @@ class TLSAmpl;
 #include "JLS.h"
 #include "TFracNum.h"
 
+#include <algorithm>
 #include <array>
 #include <vector>
 
@@ -15,14 +16,39 @@ struct PolynomialTerm {
     std::array<int, 2> Exponents;
 
     /// constructor
-    PolynomialTerm(const TFracNum& pf2, std::array<int, 2> exps)
-    : PrefactorSquared(pf2), Exponents(exps) {}
+    PolynomialTerm(const TFracNum& pf2, int exps1, int exps2)
+    : PrefactorSquared(pf2), Exponents({exps1, exps2}) {}
+
 };
 
+/// convert to string
+std::string to_string(const PolynomialTerm& p);
+
+/// check for equality to zero
+const bool is_zero(const PolynomialTerm& p)
+{ return p.PrefactorSquared == TFracNum::Zero; }
+
+/// multiplication assignment
+PolynomialTerm& operator*=(PolynomialTerm& p, const TFracNum& f)
+{ p.PrefactorSquared *= f; return p; }
+
+/// copy the PolynomialTerm and swap its exponents
 PolynomialTerm swap_exponents(PolynomialTerm p)
 { std::swap(p.Exponents[0], p.Exponents[1]); return p; }
 
+/// \typedef PolynomialTerms
 using PolynomialTerms = std::vector<PolynomialTerm>;
+
+/// convert to string
+std::string to_string(const PolynomialTerms& P);
+
+/// multiplation assignment
+PolynomialTerms& operator*=(PolynomialTerms& P, const TFracNum& f)
+{ std::for_each(P.begin(), P.end(), [&f](PolynomialTerm& p){p *= f;}); return P; }
+
+/// copy PolynomialTerms and swap exponents
+PolynomialTerms swap_exponents(PolynomialTerms P)
+{ std::for_each(P.begin(), P.end(), [](PolynomialTerm& p){p = swap_exponents(p);}); return P; }
 
 /*!
  \class TLSContrib
@@ -82,6 +108,9 @@ private:
     static bool Debug_;
 
 };
+
+/// convert to string
+std::string to_string(const TLSContrib& C);
 
 /// equality operator
 inline const bool operator==(const TLSContrib& lhs, const TLSContrib& rhs)

@@ -7,7 +7,7 @@
 
 
 using namespace std;
-using rpwa::operator<<;
+// using rpwa::operator<<;
 
 
 TTensorTerm::TTensorTerm(const char& name,
@@ -258,13 +258,13 @@ long TTensorTerm::LJContraction(const long& nCon, const bool& even)
                     return 1;
                 }
             } else {
-                printWarn << "troule == 5, whatever that means..." << endl;
+                std::cout << "troule == 5, whatever that means..." << endl;
                 error = true;
             }
         }
     } else {
         if (rOme != 0 and rEps != 0 and rChi != 0 and rPhi != 0) {
-            printWarn << "troule == 1, whatever that means..." << endl;
+            std::cout << "troule == 1, whatever that means..." << endl;
             error = true;
         }
     }
