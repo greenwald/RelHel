@@ -6,55 +6,131 @@
 
 const char IOUTSTRING[3] = "%d";
 
-/// \typedef PrimeFactors
-/// maps prime factor to exponent
-using PrimeFactors = std::map<unsigned, unsigned>;
+/// \class PrimeFactors
+/// \brief Prime factor decomposition of an unsigned integer
+class PrimeFactors
+{
+ public:
+
+    /// maps prime factor to exponent
+    using map_type = std::map<unsigned, unsigned>;
+    
+    /// access operator
+    map_type::mapped_type& operator[](const map_type::key_type& key)
+    { return Factors_[key]; }
+
+    /// access begin
+    map_type::iterator begin()
+    { return Factors_.begin(); }
+
+    /// access begin
+    map_type::const_iterator begin() const
+    { return Factors_.begin(); }
+
+    /// access end
+    map_type::iterator end()
+    { return Factors_.end(); }
+
+    /// access end
+    map_type::const_iterator end() const
+    { return Factors_.end(); }
+
+    /// erase
+    map_type::iterator erase(map_type::const_iterator pos)
+    { return Factors_.erase(pos); }
+
+    /// explicit conversion to unsigned
+    explicit operator unsigned() const;
+
+    /// const access to factors map
+    const map_type& factors() const
+    { return Factors_; }
+    
+ private:
+
+    map_type Factors_;
+};
+
+/// convert to string
+std::string to_string(const PrimeFactors& pf);
+
+/// \return prime number decomposition of product of arguments
+PrimeFactors decompose(const std::vector<unsigned>& N);
+
+/// \return prime number decomposition of product of arguments
+template <typename ... Types>
+PrimeFactors decompose(unsigned n, Types ... other_n)
+{ return decompose({n, other_n...}); }
+
+/// \return prime number decomposition of product of factorials of arguments
+PrimeFactors decompose_factorial(const std::vector<unsigned>& N);
+
+/// \return prime number decomposition of product of factorials of arguments
+template <typename ... Types>
+PrimeFactors decompose_factorial(unsigned n, Types ... other_n)
+{ return decompose_factorial({n, other_n...}); }
+
+/// equality operator
+const bool operator==(const PrimeFactors& lhs, const PrimeFactors& rhs)
+{ return lhs.factors() == rhs.factors(); }
+
+/// remove factors with exponent = 0
+PrimeFactors& remove_zeroes(PrimeFactors& PF);
+
+/// remove common factors from arguments;
+/// remove_zeroes is not called.
+PrimeFactors remove_common(PrimeFactors& A, PrimeFactors& B);
+
+/// remove common factors from arguments, storing into return value;
+/// remove_zeroes is not called.
+PrimeFactors common(PrimeFactors& A, PrimeFactors& B);
+
+/// multiplication assignment
+PrimeFactors& operator*=(PrimeFactors& lhs, const PrimeFactors& rhs)
+{ for (const auto& p_e : rhs) lhs[p_e.first] += p_e.second; return lhs; }
+
+/// multiplication
+PrimeFactors operator*(PrimeFactors A, const PrimeFactors& B)
+{ return A *= B; }
+
+/// \return exponentiation of factorized unsigned
+PrimeFactors pow(PrimeFactors pf, unsigned n)
+{ for (auto& p_e : pf) p_e.second *= n; return pf; }
+
+/// \return square root of factorized unsigned, throws if sqrt is not unsigned.
+PrimeFactors sqrt(PrimeFactors pf);
+
+/// factorize PrimeFactors into sqrt-able and non-sqrt-able portions;
+/// note, no sqrt is applied
+std::array<PrimeFactors, 2> factorize_sqrt(PrimeFactors pf);
 
 /// \return sign factor
 int sign_factor(int n, int d);
 
-/// \return prime number decomposition of unsigned integer
-PrimeFactors decompose(unsigned n);
-
-/// \return prime number decomposition of factorial of unsigned integer
-PrimeFactors decompose_factorial(unsigned n);
-
-/// \return multiplication assignment
-PrimeFactors& operator*=(PrimeFactors& A, const PrimeFactors& B);
-
 /// \class TFracNum
-/// \brief Fractional Number.
-///
-/// Fractional number with numerator and denominator represented by
-/// their prime number decomposition. Some arithmetical operations are
-/// included but \b not complete.
-///
+/// \brief Ractional number represented by prime decompositions of numerator and denominator
 /// \author Jan.Friedrich@ph.tum.de, Daniel Greenwald
 class TFracNum
 {
-
 public:
 
-    /// default constructor
-    TFracNum() = default;
-
-    /// vector constructor
+    /// constructor
     /// \param N exponents of the numerator's prime numbers
     /// \param D exponents of the denominator's prime numbers
-    /// \param s sign of number
-    TFracNum(const PrimeFactors& N, const PrimeFactors& D, double s);
+    /// \param s sign of number (converted to +-1, 0, inf, or nan)
+    TFracNum(const PrimeFactors& N, const PrimeFactors& D, double s = 1)
+        : Numerator_(N), Denominator_(D), Sign_(std::isfinite(s) ? sign_of(s) : s)
+    {
+        remove_common(Numerator_, Denominator_);
+        remove_zeroes(Numerator_);
+        remove_zeroes(Denominator_);
+    }
 
     /// int constructor
     /// \param N numerator
     /// \param D denominator
-    TFracNum(int N, int D)
+    TFracNum(int N, int D == 1)
         : TFracNum(decompose(abs(N)), decompose(abs(D)), sign_factor(N, D)) {}
-
-    /// construct TFracNum from numerator and demoninator specified by factorials
-    /// \param N numerator = N!
-    /// \param D denimnator  = D!
-    static TFracNum factorial_TFracNum(int N, int D)
-    { return TFracNum(decompose_factorial(abs(N)), decompose_factorial(abs(D)), sign_factor(N, D)); }
 
     /// \return Numerator_
     const PrimeFactors& numerator() const
@@ -64,106 +140,36 @@ public:
     const PrimeFactors& denominator() const
     { return Denominator_; }
 
-    double sign() const
+    /// \return Sign_
+    const double sign() const
     { return Sign_; }
 
-
-
+    /// convert to double
+    explicit operator double() const
+    { return Sign_ * static_cast<unsigned>(Numerator_) / static_cast<unsigned>(Denominator_); }
     
-    //! Largest common divisor of numerator and denominator
-    long DenomCommonDivisor(const TFracNum& rhs) const;
+    static TFracNum am0_to_J(unsigned J, int m, int m0)
+    { return TFracNum(decompose(m0) * decompose_factorial(J + m, J - m), decompose_factorial(2 * J)); }
 
-    //! The return value c satisfies ssqrt(c)=ssqrt(a)+ssqrt(b)
-    //! Here the signed square root function ssqrt(n)=sign(n)*sqrt(abs(n)) is used
-    TFracNum SumSignedRoots(const TFracNum& rhs) const;
-
-    //! String in the form Num/Den. If Den=1, only Num is given
-    const char* FracString() const;
-
-    //! String of the square-root in the form <tt>Num/Den#RNum/RDen</tt>
-    //! All numbers after the '#' are to be square-rooted, so Num/Den#RNum/RDen=Num/Den*sqrt(RNum/RDen)
-    const char* FracStringSqrt() const;
-
-    //! Complete information about the fractional number is put to cout
-    std::ostream& Print(std::ostream& out) const;
-
-    //! Return the double-precision real value
-    const double& Dval(const bool& squareRootTheResult = false) const;
-
-    //! Try square root operation
-    /*! In case of success, return true. In case this does not lead to a
-     fractional number, the number is left untouched and return value is false*/
-    bool Sqrt();
-
-    //! Force sign to plus
-    bool Abs();
-
-    //! Inversion of number, so nominator and denumerator are flipped
-    bool Invert();
-
-    //! Return sign as +1 (also for zero or undefined number) or -1
-    long GetSign() const { return (Dval() < 0) ? -1 : 1; }
-
-    //! Return numerator
-    const long& GetNumerator() const;
-
-    //! Return denominator
-    const long& GetDenominator() const;
-
-    //! Output some comparative values for two fractional numbers
-    bool PrintDifference(const TFracNum&) const;
-
-    //! String containing NOM and DEN
-    const char* HeaderString() const;
-
-    //! Check whether two fractional numbers are equal
-    bool operator==(const TFracNum& rhs) const;
-    //! Check whether two fractional numbers are not equal
-    bool operator!=(const TFracNum& rhs) const { return not (*this == rhs); }
-    //! Check whether left-hand number is greater than right-hand number
-    bool operator>(const TFracNum& rhs) const;
-    //! Multiply two fractional numbers
-    TFracNum& operator*=(const TFracNum& rhs);
-    //! Add two fractional numbers
-    TFracNum& operator+=(const TFracNum& rhs);
-
-    static TFracNum am0_to_J(const long& J, const long& m, const long& m0);
-    static TFracNum c_sub_ell(const long& ell);
-    static TFracNum cm0_sub_ell(const long& ell, const long& m0);
-    static TFracNum cm0_sub_ell_2(const long& ell, const long& m0);
+    static TFracNum c_sub_l(unsigned l)
+    { return TFracNum(decompose(ell) * pow(decompose_factorial(ell), 2), decompose_factorial(2 * ell)); }
+    
+    static TFracNum cm_sub_l(unsigned l, int m)
+    { return (l == 0) ? TFracNum(1) : TFracNum(decompose((l + m / 2)) * pow(decompose_factorial(l), 2), decompose_factorial(2 * l)); }
+    
+    static TFracNum cm_sub_l_2(unsigned l, int m)
+    { return (l == 0) ? TFracNum(1) : TFracNum(decompose(l + m) * pow(decompose_factorial(l), 4), pow(decompose_factorial(2 * l), 2)); }
 
 private:
-    //
-    // since Num is appearing as short form of "Number",
-    // nom/NOM is taken when the numerator is meant
-    //
-
+    
+    /// prime factorization of numerator
     PrimeFactors Numerator_;
+
+    /// prime factorization of denominator
     PrimeFactors Denominator_;
     
-    // Prime number decomposition of numerator. Field length is maxPrimNom,
-    //  NOM[0] is the exponent of 2, NOM[1] of 3, and so on.
-    std::vector<int> NumeratorExponents_;
-
-    // Prime number decomposition of denominator, analogue to NOM
-    std::vector<int> DenominatorExponents_;
-
     // Prefactor, including sign
-    double SignPrefactor_{1};
-
-    // Integers of numerator and denominator
-    mutable int   _numerator_{0};
-    mutable bool   _nomCacheRebuildRequired{true};
-    mutable int   _denominator{1};
-    mutable bool   _denCacheRebuildRequired{true};
-    mutable double _value{0};
-    mutable bool   _valueCacheRebuildRequired{true};
-
-    void resetAllCaches() const;
-
-    static int getNumberFromFactorization(const std::vector<int>& vector);
-
-    static bool Debug_;
+    double Sign_{1};
 
 public:
 
@@ -176,19 +182,50 @@ public:
 
 };
 
+/// convert to string as [sign][N]/[D]
+std::string to_string(const TFracNum& f);
+
+/// convert to string as {N, D}
+std::string to_header_string(const TFracNum& f);
+
+/// convert to detailed string
+std::string to_detailed_string(const TFracNum& f);
+
+/// equality operator
+const bool operator==(const TFracNum& lhs, const TFracNum& rhs)
+{ return lhs.sign() == rhs.sign() and lhs.numerator() == rhs.numerator() and lhs.denominator() == rhs.denominator(); }
+
+/// inequality operator
+const bool operator!=(const TFracNum& lhs, const TFracNum& rhs)
+{ return !(lhs == rhs); }
+
+/// less than operator
+const bool operator<(const TFracNum& lhs, const TFracNum& rhs);
+
+/// \return whether TFracNum is zero
+const bool is_zero(const TFracNum& f)
+{ return f.sign() == 0; }
+
 /// unary minus
 TFracNum operator-(const TFracNum& f)
 { return TFracNum(f.numerator(), f.denominator(), -f.sign()); }
 
+/// addition assignment
+TFracNum& operator+=(TFracNum& lhs, const TFracNum& rhs);
+
+/// addition
+TFracNum operator+(TFracNum lhs, const TFracNum& rhs)
+{ return lhs += rhs; }
+
+/// multiplication assignment
+TFracNum& operator*=(TFracNum& lhs, const TFracNum& rhs);
+
+/// multiplication
+TFracNum operator*(TFracNum lhs, const TFracNum& rhs)
+{ return lhs *= rhs; }
+
 /// multiple sign factors
 double multiply_sign_factors(double s1, double s2);
-
-/// addition assignment
-TFracNum& operator+=(TFracNum& lhs, const TFracNum& rhs)
-{
-    return lhs = TFracNum(lhs.numerator() * rhs.denominator() + rhs.numerator() * lhs.denominator(),
-                          lhs.denominator() * rhs.denominator(), multiply_sign_factors(lhs.sign(), rhs.sign()));
-}
 
 /// invert sign
 double invert_sign_factor(double s);
@@ -197,31 +234,34 @@ double invert_sign_factor(double s);
 TFracNum invert(const TFracNum& f)
 { return TFracNum(f.denominator(), f.numerator(), invert_sign_factor(f.sign())); }
 
-inline
-std::ostream&
-operator <<(std::ostream&            out,
-            const TFracNum&          fracNum)
-{
-    return fracNum.Print(out);
-}
+/// \return square root of absolute value of number with sign
+/// preserved, potentially throws if sqrt is not int
+TFracNum sqrt(const TFracNum& f)
+{ return TFracNum(sqrt(f.numerator()), sqrt(f.denominator()), f.sign()); }
 
+/// factorize rational number into cleanly sqrt-able and
+/// non-cleanly-sqrt-able portions; note the sqrt is not taken of
+/// either and the sign is transfered to the sqrt-able portion.
+/// \return array := [sqrt-able, non-sqrt-able]
+std::array<TFracNum, 2> factorize_sqrt(const TFracNum& f);
 
-inline
-TFracNum
-operator *(TFracNum lhs, const TFracNum& rhs)
-{
-    lhs *= rhs;
-    return lhs;
-}
+/// convert to sqrt string := [sign][N]/[D] sqrt([n][d]);
+/// where clean sqrt is pulled out
+std::string to_sqrt_string(const TFracNum& f)
+{ return to_sqrt_string(factorize_sqrt(f)); }
 
+/// convert to sqrt string := [sign][N_0]/[D_0] sqrt([N_1][D_1]);
+std::string to_sqrt_string(const std::array<TFracNum, 2>& f);
 
-inline
-TFracNum
-operator +(TFracNum lhs, const TFracNum& rhs)
-{
-    lhs += rhs;
-    return lhs;
-}
+/// \return exponentiated rational number with sign preserved
+TFracNum pow(const TFracNum& f, unsigned n)
+{ return TFracNum(pow(f.numerator(), n), pow(f.denominator(), n), f.sign()); }
 
+/// \return absolute value of number
+TFracNum abs(const TFracNum& f)
+{ return TFracNum(f.numerator(), f.denominator(), std::abs(f.sign())); }
+
+TFracNum sum_roots(const TFracNum& A, const TFracNum& B)
+{ return pow(sqrt(A) + sqrt(B), 2); }
 
 #endif

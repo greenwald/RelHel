@@ -1,13 +1,14 @@
 #ifndef __MathUtils__h
 #define __MathUtils__h
 
+#include <cstdlib>
 #include <string>
 #include <vector>
 
-const bool is_odd(int v)
+constexpr const bool is_odd(int v) noexcept
 { return v & 0x1; }
 
-const bool is_even(int v)
+constexpr const bool is_even(int v) noexcept
 { return !is_odd(v); }
 
 inline std::string parity_to_string(int p)
@@ -18,7 +19,15 @@ const std::vector<unsigned> triangle(unsigned s1, unsigned s2);
 
 /// \return sign of argument
 template <typename T>
-const T sign_of(T t)
+constexpr const T sign_of(T t) noexcept
 { return ((T(0) < t) - (t < T(0))); }
+
+/// \return sign_of(val) * sqrt(abs(val))
+constexpr const double signed_sqrt(double val) noexcept
+{ return sign_of(val) * std::sqrt(std::abs(val)); }
+
+/// \return exponent string := "" (n == 0), "s" (n == 1), "s^n" (otherwise)
+std::string exponential_string(std::string s, int n)
+{ return (n == 0) ? "" : (s + (n == 1) ? "" : "^" + std::to_string(n)); }
 
 #endif

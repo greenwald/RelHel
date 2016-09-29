@@ -3,19 +3,19 @@ set(INCLUDE_DIRECTORIES
 include_directories(${INCLUDE_DIRECTORIES})
 
 set(RelHel_SOURCES
-	ClebschGordanBox.cc
-	MathUtils.cc
-	TFhh.cc
+#	ClebschGordanBox.cc
+#	MathUtils.cc
+#	TFhh.cc
 	TFracNum.cc
-	TJSS.cc
-	TJwfTensor.cc
-	TLSAmpl.cc
-	TLSContrib.cc
-	TLSNonRel.cc
-	TSpinWaveFunction.cc
-	generatePrimeNumberCache.cc
-	primeNumbers.cc
-	)
+#	TJSS.cc
+#	TJwfTensor.cc
+#	TLSAmpl.cc
+#	TLSContrib.cc
+#	TLSNonRel.cc
+#	TSpinWaveFunction.cc
+#	generatePrimeNumberCache.cc
+#	primeNumbers.cc
+)
 
 add_library(RelHel SHARED ${RelHel_SOURCES})
 
