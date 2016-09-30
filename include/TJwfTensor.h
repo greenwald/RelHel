@@ -4,38 +4,39 @@
 #include <iostream>
 #include <vector>
 
-#include "TFracNum.h"
+#include "RationalNumber.h"
 
-class TTensorTerm
+class TensorTerm
 {
-
 public:
 
-    TTensorTerm()
-        : _ome_pzm(),
-          _eps_pzm(),
-          _chi_pzm(),
-          _phi_pzm(),
-          _gam_s_pot(0),
-          _gam_sig_pot(0),
-          _prefac(TFracNum::Zero)
-    {
-    }
+    /// \enum index_type
+    /// index type for components
+    enum class index : unsigned { omega, epsilon, chi, phi };
 
-    // TODO: optimize this call
-    TTensorTerm(const char& name,
-                const std::vector<long>& pzm_field,
-                const TFracNum& prefac);
+    /// constructor
+    TensorTerm(index i, const std::vector<int>& pzm, const RationalNumber& prefac)
+        : Prefactor_(prefac)
+    { PZM_[i] = pzm; }
 
-    TTensorTerm(const TTensorTerm& S,
-                const TTensorTerm& L,
-                const long& contractions,
-                long o_share,
-                long e_share,
-                const char& con_type);
+    /// copy-ish constructor
+    TensorTerm(const TensorTerm& S, const TensorTerm& L,
+               unsigned contractions, int o_contractions, index cp_contraction)
 
+    /// \return Prefactor_
+    const RationalNumber& prefactor() const
+    { return Prefactor_; }
+
+    /// \return GammaPot_
+    const std::array<int, 2>& gammaPot() const
+    { return GammaPot_; }
+    
+    /// access operator
+    const std::vector<int>& operator[](index_type i) const
+    { return PZM_[i]; }
+    
     long LJContraction       (const long& ncon, const bool& even);
-    // TODO: optimize this call
+// TODO: optimize this call
     void Multiply            (const char& name, const std::vector<long>& pzm_field, const TFracNum& prefac);
     long SpinInnerContraction(const long& cPsiInt);
     bool SameStructure       (const TTensorTerm& rhs) const;
@@ -55,15 +56,19 @@ private:
                        const size_t& rChi,
                        const size_t& rPhi);
 
-    std::vector<long> _ome_pzm;
-    std::vector<long> _eps_pzm;
-    std::vector<long> _chi_pzm;
-    std::vector<long> _phi_pzm;
 
-    long _gam_s_pot;
-    long _gam_sig_pot;
+    std::array<std::vector<int>, 4> PZM_;
+    std::array<int, 2> GammaPot_({0, 0});
 
-    TFracNum _prefac;
+    /* std::vector<long> _ome_pzm; */
+    /* std::vector<long> _eps_pzm; */
+    /* std::vector<long> _chi_pzm; */
+    /* std::vector<long> _phi_pzm; */
+
+    long _gam_s_pot{0};
+    long _gam_sig_pot{0};
+
+    RationalNumber Prefactor_{RationalNumber(1)};
 
 };
 

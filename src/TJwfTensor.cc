@@ -1,128 +1,54 @@
 #include "TJwfTensor.h"
 
-#include "ClebschGordanBox.h"
-
 #include <stdexcept>
 #include <string>
 
-
-using namespace std;
-// using rpwa::operator<<;
-
-
-TTensorTerm::TTensorTerm(const char& name,
-                         const vector<long>& pzm_field,
-                         const TFracNum& prefac)
-    : _ome_pzm(),
-      _eps_pzm(),
-      _chi_pzm(),
-      _phi_pzm(),
-      _gam_s_pot(0),
-      _gam_sig_pot(0),
-      _prefac(prefac)
+TensorTerm::TensorTerm(const TensorTerm& S, const TensorTerm& L, unsigned contractions, unsigned o_contractions, index cp_contraction)
+    : GammaPot_({S.gammaPot()[0] + L.gammaPot()[1], S.gammaPot()[1] + L.gammaPot()[0]})
+      PreFactor_(S._prefac * L._prefac)
 {
-    switch (name) {
-        case 'o':
-            _ome_pzm = pzm_field;
-            break;
-        case 'e':
-            _eps_pzm = pzm_field;
-            break;
-        case 'c':
-            _chi_pzm = pzm_field;
-            break;
-        case 'p':
-            _phi_pzm = pzm_field;
-            break;
-    }
-}
-
-TTensorTerm::TTensorTerm(const TTensorTerm& S,
-                         const TTensorTerm& L,
-                         const long& contractions,
-                         long o_share,
-                         long e_share,
-                         const char& conType)
-    : _ome_pzm(),
-      _eps_pzm(),
-      _chi_pzm(),
-      _phi_pzm(),
-      _gam_s_pot(S._gam_s_pot + L._gam_s_pot),
-      _gam_sig_pot(S._gam_sig_pot + L._gam_sig_pot),
-      _prefac(S._prefac * L._prefac)
-{
-
-    if (not L._ome_pzm.empty() or not L._eps_pzm.empty()) {
+    if (!L[index::omega].empty() or !L[index::epsilon].empty())
         return;
-    }
 
-    size_t rOme = S._ome_pzm.size();
-    size_t rEps = S._eps_pzm.size();
-    size_t rChi = L._chi_pzm.size() + S._chi_pzm.size();
-    size_t rPhi = L._phi_pzm.size() + S._phi_pzm.size();
+    if (cp_contraction != index::chi or cp_contraction != index::phi)
+        throw runtime_error("incorrect contraction specified");
 
-    for (long con = 0; con < contractions; con++) {
-        long cp = 0;
-        if (conType == 'c') {
-            cp = L._chi_pzm[rChi - 1];
-            rChi--;
-        } else {
-            cp = L._phi_pzm[rPhi - 1];
-            rPhi--;
+    std::array<size_t, 4> r = {S[index::omega].size(), S[index::epsilon].size(),
+                               L[index::chi].size() + S[index::chi].size()
+                               L[index::phi].size() + S[index::phi].size()};
+
+    while (--contractions >= 0) {
+        
+        auto cp = (cp_contraction == index::c) ? L[index::chi][--r[index::chi]]   : L[index::phi][--r[index::phi]];
+        auto oe = (o_contractions > 0)         ? S[index::omega][--r[index::omega]] : S[index::epsilon][--r[index::epsilon]];
+
+        if (cp_contraction == index::chi and oe * cp == -1)
+            Prefactor_ = -Prefactor_;
+
+        else if (cp_contraction == index::phi and oe * cp == 1) {}
+
+        else if (oe == 0 and cp == 0) {
+            if (o_contractions > 0)
+                ++GammaPot_[0];
+            else
+                ++GammaPot_[1];
         }
-        long oe = 0;
-        if (o_share) {              // o is to be contracted
-            oe = S._ome_pzm[rOme - 1];
-            rOme--;
-        } else {                     // e is to be contracted
-            oe = S._eps_pzm[rEps - 1];
-            e_share--;
-            rEps--;
-        }
-        if (conType == 'c' and ((oe == 1 and cp == -1) or (oe == -1 and cp == 1))) {
-            _prefac.FlipSign();
-        } else if (conType == 'p' and ((oe == 1 and cp == 1) or (oe == -1 and cp == -1))) {
 
-        } else if (oe == 0 and cp == 0) {
-            if (o_share) {
-                _gam_s_pot++;
-            } else {
-                _gam_sig_pot++;
-            }
-        } else {
-            _prefac = TFracNum::Zero;
+        else {
+            Prefactor_ = RationalNumber(0);
             return;
         }
-        if (o_share) {
-            o_share--;
-        }
+
+        if (o_contractions > 0) --o_contractions;
     }
 
-    _ome_pzm.resize(rOme);
-    for (size_t i = 0; i < _ome_pzm.size(); i++) {
-        _ome_pzm[i] = S._ome_pzm[i];
-    }
-    _eps_pzm.resize(rEps);
-    for (size_t i = 0; i < _eps_pzm.size(); i++) {
-        _eps_pzm[i] = S._eps_pzm[i];
-    }
-    _chi_pzm.resize(rChi);
-    for (size_t i = 0; i < _chi_pzm.size(); i++) {
-        if (i < L._chi_pzm.size()) {
-            _chi_pzm[i] = L._chi_pzm[i];
-        } else {
-            _chi_pzm[i] = S._chi_pzm[i - L._chi_pzm.size()];
-        }
-    }
-    _phi_pzm.resize(rPhi);
-    for (size_t i = 0; i < _phi_pzm.size(); i++) {
-        if (i < L._phi_pzm.size()) {
-            _phi_pzm[i] = L._phi_pzm[i];
-        } else {
-            _phi_pzm[i] = S._phi_pzm[i - L._phi_pzm.size()];
-        }
-    }
+    for (index i = omega; i <= epsilon; ++i)
+        PZM_[i].assign(S[i].begin(), S[i].begin() + r[i]);
 
+    for (index i = chi; i <= phi; ++i) {
+        PZM_[i].assign(L[i].begin(), L[i].begin() + r[i]);
+        PZM_[i].insert(PZM_[i].end(), S[i].begin(), S[i].begin() + (r[i] - PZM_[i].size()));
+    }
 }
 
 long TTensorTerm::LJContraction(const long& nCon, const bool& even)
