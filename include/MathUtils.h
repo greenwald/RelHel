@@ -1,9 +1,12 @@
 #ifndef __MathUtils__h
 #define __MathUtils__h
 
+#include <cmath>
 #include <cstdlib>
 #include <string>
 #include <vector>
+
+namespace relhel {
 
 constexpr const bool is_odd(int v) noexcept
 { return v & 0x1; }
@@ -28,6 +31,8 @@ constexpr const double signed_sqrt(double val) noexcept
 
 /// \return exponent string := "" (n == 0), "s" (n == 1), "s^n" (otherwise)
 std::string exponential_string(std::string s, int n)
-{ return (n == 0) ? "" : (s + (n == 1) ? "" : "^" + std::to_string(n)); }
+{ return n == 0 ? "" : (s + (n == 1 ? "" : "^" + std::to_string(n))); }
+
+}
 
 #endif

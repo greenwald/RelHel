@@ -3,10 +3,10 @@ set(INCLUDE_DIRECTORIES
 include_directories(${INCLUDE_DIRECTORIES})
 
 set(RelHel_SOURCES
+  RationalNumber.cxx
 #	ClebschGordanBox.cc
 #	MathUtils.cc
 #	TFhh.cc
-	TFracNum.cc
 #	TJSS.cc
 #	TJwfTensor.cc
 #	TLSAmpl.cc

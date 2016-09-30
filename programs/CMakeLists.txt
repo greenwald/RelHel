@@ -1,11 +1,11 @@
 include_directories(${RelHel_SOURCE_DIR}/include)
 
 set(PROGRAMS
-  test_FracNum
+  test_RationalNumber
 #  CalcAmpl
   )
 
 foreach(program ${PROGRAMS})
-	add_executable(${program} EXCLUDE_FROM_ALL ${program}.cc)
+	add_executable(${program} ${program}.cxx)
 	target_link_libraries(${program} RelHel)
 endforeach(program)
