@@ -8,12 +8,19 @@
 
 namespace relhel {
 
+/// \return whether value is odd
 constexpr const bool is_odd(int v) noexcept
 { return v & 0x1; }
 
+/// \return whether value is even
 constexpr const bool is_even(int v) noexcept
 { return !is_odd(v); }
 
+/// (-1)^n
+constexpr int pow_negative_one(int n)
+{ return is_odd(n) ? -1 : +1; }
+
+/// \return '+' or '-' depending on sign of argument
 inline std::string parity_to_string(int p)
 { return (p > 0) ? "+" : "-"; }
 
@@ -30,8 +37,12 @@ constexpr const double signed_sqrt(double val) noexcept
 { return sign_of(val) * std::sqrt(std::abs(val)); }
 
 /// \return exponent string := "" (n == 0), "s" (n == 1), "s^n" (otherwise)
-std::string exponential_string(std::string s, int n)
+inline std::string exponential_string(std::string s, int n)
 { return n == 0 ? "" : (s + (n == 1 ? "" : "^" + std::to_string(n))); }
+
+/// \return spin as string
+inline std::string spin_to_string(int s)
+{ return is_even(s) ? std::to_string(s / 2) : (std::to_string(s) + "/2"); }
 
 }
 

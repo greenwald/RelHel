@@ -3,6 +3,7 @@ set(INCLUDE_DIRECTORIES
 include_directories(${INCLUDE_DIRECTORIES})
 
 set(RelHel_SOURCES
+  ClebschGordan.cxx
   RationalNumber.cxx
 #	ClebschGordanBox.cc
 #	MathUtils.cc

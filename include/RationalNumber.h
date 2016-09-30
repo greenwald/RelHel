@@ -1,5 +1,8 @@
-#ifndef TFracNum_h
-#define TFracNum_h
+/// \file
+/// \author Daniel Greenwald
+
+#ifndef RationalNumber_h
+#define RationalNumber_h
 
 #include "MathUtils.h"
 
@@ -13,6 +16,7 @@ namespace relhel {
 
 /// \class PrimeFactors
 /// \brief Prime factor decomposition of an unsigned integer
+/// \author Daniel Greenwald
 class PrimeFactors
 {
  public:
@@ -63,7 +67,7 @@ class PrimeFactors
 };
 
 /// check if equal to unity
-const bool is_one(const PrimeFactors& pf)
+inline const bool is_one(const PrimeFactors& pf)
 { return pf.empty(); }
 
 /// convert to string
@@ -124,7 +128,7 @@ double sign_factor(int n, int d);
 
 /// \class RationalNumber
 /// \brief Ractional number represented by prime decompositions of numerator and denominator
-/// \author Jan.Friedrich@ph.tum.de, Daniel Greenwald
+/// \author Daniel Greenwald
 class RationalNumber
 {
 public:
@@ -163,18 +167,6 @@ public:
     explicit operator double() const
     { return Sign_ * static_cast<unsigned>(Numerator_) / static_cast<unsigned>(Denominator_); }
     
-    static RationalNumber am0_to_J(unsigned J, int m, int m0)
-    { return RationalNumber(decompose(m0) * decompose_factorial(J + m, J - m), decompose_factorial(2 * J)); }
-
-    static RationalNumber c_sub_l(unsigned l)
-    { return RationalNumber(decompose(l) * pow(decompose_factorial(l), 2), decompose_factorial(2 * l)); }
-    
-    static RationalNumber cm_sub_l(unsigned l, int m)
-    { return (l == 0) ? RationalNumber(1) : RationalNumber(decompose((l + m / 2)) * pow(decompose_factorial(l), 2), decompose_factorial(2 * l)); }
-    
-    static RationalNumber cm_sub_l_2(unsigned l, int m)
-    { return (l == 0) ? RationalNumber(1) : RationalNumber(decompose(l + m) * pow(decompose_factorial(l), 4), pow(decompose_factorial(2 * l), 2)); }
-
 private:
     
     /// prime factorization of numerator
@@ -185,15 +177,6 @@ private:
     
     // Prefactor, including sign
     double Sign_{1};
-
-public:
-
-    const static RationalNumber Zero;
-    const static RationalNumber One;
-    const static RationalNumber Two;
-    const static RationalNumber mTwo;
-    const static RationalNumber Quarter;
-
 
 };
 
@@ -220,6 +203,10 @@ const bool operator<(const RationalNumber& lhs, const RationalNumber& rhs);
 /// \return whether RationalNumber is zero
 inline const bool is_zero(const RationalNumber& f)
 { return f.sign() == 0; }
+
+/// \return whether RationalNumber is unity
+inline const bool is_one(const RationalNumber& f)
+{ return is_one(f.numerator()) and is_one(f.denominator()) and f.sign() == 1; }
 
 /// remove common factors from arguments;
 void remove_common(RationalNumber& A, RationalNumber& B);
@@ -283,6 +270,7 @@ inline RationalNumber pow(const RationalNumber& f, unsigned n)
 inline RationalNumber abs(const RationalNumber& f)
 { return RationalNumber(f.numerator(), f.denominator(), std::abs(f.sign())); }
 
+/// \todo Delete
 inline RationalNumber sum_roots(const RationalNumber& A, const RationalNumber& B)
 { return pow(sqrt(A) + sqrt(B), 2); }
 

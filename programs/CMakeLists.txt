@@ -1,7 +1,7 @@
 include_directories(${RelHel_SOURCE_DIR}/include)
 
 set(PROGRAMS
-  test_RationalNumber
+  test
 #  CalcAmpl
   )
 
