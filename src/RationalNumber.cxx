@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <iostream>
 #include <numeric>
 #include <string>
 
@@ -122,6 +121,7 @@ PrimeFactors decompose_factorial(const std::vector<unsigned>& F)
     for (unsigned f : F)
         while (f > 1)
             N.push_back(f--);
+
     return decompose(N);
 }
 

@@ -27,6 +27,12 @@ inline std::string parity_to_string(int p)
 /// \return vector of spins from |s1-s2| to (s1 + s2)
 const std::vector<unsigned> triangle(unsigned s1, unsigned s2);
 
+/// \return vector of spin projections from -j to j
+const std::vector<int> projections(unsigned j);
+
+/// \return vector of spin projections of a collection of particles
+const std::vector<std::vector<int> > projections(const std::vector<unsigned>& J);
+
 /// \return sign of argument
 template <typename T>
 constexpr const T sign_of(T t) noexcept
