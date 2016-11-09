@@ -1,5 +1,5 @@
-#ifndef __MathUtils__h
-#define __MathUtils__h
+#ifndef relhel__MathUtils_h
+#define relhel__MathUtils_h
 
 #include "Parity.h"
 

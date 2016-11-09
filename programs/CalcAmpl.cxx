@@ -1,7 +1,7 @@
 // #include "TFhh.h"
 // #include "TJSS.h"
 
-#include "Parity.h"
+#include "QuantumNumbers.h"
 
 #include <iostream>
 #include <stdexcept>
@@ -17,21 +17,18 @@ int main(int narg, char** args)
         return 0;
     }
 
-    std::vector<int> j;
-    std::vector<relhel::Parity> p;
+    std::vector<relhel::QuantumNumbers> jp;
 
-    for (int i = 1; i <= 3; ++i) {
-        std::string s = args[i];
-        p.push_back(relhel::to_parity(s.back()));
-        j.push_back(std::stoi(s.substr(0, s.length() - 1)));
-    }
+    for (int i = 1; i <= 3; ++i)
+        jp.emplace_back(args[i]);
 
-    std::cout << "Mother particle:   " << j[0] << relhel::to_string(p[0]) << std::endl;
-    std::cout << "1. decay particle: " << j[1] << relhel::to_string(p[1]) << std::endl;
-    std::cout << "2. decay particle: " << j[2] << relhel::to_string(p[2]) << std::endl;
+    std::cout << "Mother particle:   " << relhel::to_string(jp[0]) << std::endl;
+    std::cout << "1. decay particle: " << relhel::to_string(jp[1]) << std::endl;
+    std::cout << "2. decay particle: " << relhel::to_string(jp[2]) << std::endl;
 
     // TJSS jss(j[0], p[0], j[1], p[1], j[2], p[2]);
     // jss.CalcAmpl();
 
+    return 1;
 }
 
