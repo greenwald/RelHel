@@ -2,7 +2,7 @@ include_directories(${RelHel_SOURCE_DIR}/include)
 
 set(PROGRAMS
   test
-#  CalcAmpl
+  CalcAmpl
   )
 
 foreach(program ${PROGRAMS})

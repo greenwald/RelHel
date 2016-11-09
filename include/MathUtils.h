@@ -1,8 +1,11 @@
 #ifndef __MathUtils__h
 #define __MathUtils__h
 
+#include "Parity.h"
+
 #include <cmath>
 #include <cstdlib>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -19,10 +22,6 @@ constexpr const bool is_even(int v) noexcept
 /// (-1)^n
 constexpr int pow_negative_one(int n)
 { return is_odd(n) ? -1 : +1; }
-
-/// \return '+' or '-' depending on sign of argument
-inline std::string parity_to_string(int p)
-{ return (p > 0) ? "+" : "-"; }
 
 /// \return vector of spins from |s1-s2| to (s1 + s2)
 const std::vector<unsigned> triangle(unsigned s1, unsigned s2);
