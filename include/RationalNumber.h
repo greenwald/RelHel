@@ -6,6 +6,7 @@
 
 #include "MathUtils.h"
 
+#include <array>
 #include <cmath>
 #include <limits>
 #include <map>

@@ -39,7 +39,7 @@ constexpr const T sign_of(T t) noexcept
 { return ((T(0) < t) - (t < T(0))); }
 
 /// \return sign_of(val) * sqrt(abs(val))
-constexpr const double signed_sqrt(double val) noexcept
+inline const double signed_sqrt(double val) noexcept
 { return sign_of(val) * std::sqrt(std::abs(val)); }
 
 /// \return exponent string := "" (n == 0), "s" (n == 1), "s^n" (otherwise)
