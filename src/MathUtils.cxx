@@ -7,42 +7,42 @@
 namespace relhel {
 
 //-------------------------
-const std::vector<unsigned> triangle(unsigned s1, unsigned s2)
+const std::vector<unsigned> triangle(unsigned two_s1, unsigned two_s2)
 {
-    unsigned smin = std::abs(static_cast<int>(s1) - static_cast<int>(s2));
-    unsigned smax = s1 + s2;
-    std::vector<unsigned> S;
-    S.reserve(smax - smin + 1);
-    for (auto s = smin; s <= smax; ++s)
-        S.push_back(s);
-    return S;
+    unsigned two_smin = std::abs(static_cast<int>(two_s1) - static_cast<int>(two_s2));
+    unsigned two_smax = two_s1 + two_s2;
+    std::vector<unsigned> two_S;
+    two_S.reserve((two_smax - two_smin) / 2 + 1);
+    for (auto two_s = two_smin; two_s <= two_smax; two_s += 2)
+        two_S.push_back(two_s);
+    return two_S;
 }
 
 //-------------------------
-const std::vector<int> projections(unsigned j)
+const std::vector<int> projections(unsigned two_j)
 {
-    std::vector<int> M;
-    for (int m = -j; m <= static_cast<int>(j); ++m)
-        M.push_back(m);
-    return M;
+    std::vector<int> two_M;
+    for (int two_m = -two_j; two_m <= static_cast<int>(two_j); ++two_m)
+        two_M.push_back(two_m);
+    return two_M;
 }
     
 //-------------------------
-const std::vector<std::vector<int> > projections(const std::vector<unsigned>& J)
+const std::vector<std::vector<int> > projections(const std::vector<unsigned>& two_J)
 {
-    // initialize vector of spin projections to -j
-    std::vector<int> M;
-    M.reserve(J.size());
-    std::transform(J.begin(), J.end(), std::back_inserter(M), std::negate<int>());
+    // initialize vector of spin projections to -two_j
+    std::vector<int> two_M;
+    two_M.reserve(two_J.size());
+    std::transform(two_J.begin(), two_J.end(), std::back_inserter(two_M), std::negate<int>());
     
     std::vector<std::vector<int> > SPV;
     // fill SPV with "odometer"-style looping
-    while (M.back() <= (int)J.back()) {
-        SPV.push_back(M);
-        ++M[0];
-        for (size_t i = 0; (i < M.size() - 1) and (M[i] > (int)J[i]); ++i) {
-            M[i] = -J[i];
-            ++M[i + 1];
+    while (two_M.back() <= (int)two_J.back()) {
+        SPV.push_back(two_M);
+        two_M[0] += 2;
+        for (size_t i = 0; (i < two_M.size() - 1) and (two_M[i] > (int)two_J[i]); ++i) {
+            two_M[i] = -two_J[i];
+            two_M[i + 1] += 2;
         }
     }
     return SPV;

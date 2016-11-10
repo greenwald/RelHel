@@ -23,14 +23,14 @@ constexpr const bool is_even(int v) noexcept
 constexpr int pow_negative_one(int n)
 { return is_odd(n) ? -1 : +1; }
 
-/// \return vector of spins from |s1-s2| to (s1 + s2)
-const std::vector<unsigned> triangle(unsigned s1, unsigned s2);
+/// \return vector of (twice) spins from |two_s1-two_s2| to (two_s1 + two_s2)
+const std::vector<unsigned> triangle(unsigned two_s1, unsigned two_s2);
 
-/// \return vector of spin projections from -j to j
-const std::vector<int> projections(unsigned j);
+/// \return vector of (twice) spin projections from -two_j to two_j
+const std::vector<int> projections(unsigned two_j);
 
 /// \return vector of spin projections of a collection of particles
-const std::vector<std::vector<int> > projections(const std::vector<unsigned>& J);
+const std::vector<std::vector<int> > projections(const std::vector<unsigned>& two_J);
 
 /// \return sign of argument
 template <typename T>
@@ -46,8 +46,8 @@ inline std::string exponential_string(std::string s, int n)
 { return n == 0 ? "" : (s + (n == 1 ? "" : "^" + std::to_string(n))); }
 
 /// \return spin as string
-inline std::string spin_to_string(int s)
-{ return is_even(s) ? std::to_string(s / 2) : (std::to_string(s) + "/2"); }
+inline std::string spin_to_string(int two_s)
+{ return is_even(two_s) ? std::to_string(two_s / 2) : (std::to_string(two_s) + "/2"); }
 
 }
 
