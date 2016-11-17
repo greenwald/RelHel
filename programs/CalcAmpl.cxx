@@ -1,6 +1,7 @@
 // #include "TFhh.h"
 // #include "TJSS.h"
 
+#include "JSS.h"
 #include "QuantumNumbers.h"
 
 #include <iostream>
@@ -22,13 +23,9 @@ int main(int narg, char** args)
     for (int i = 1; i <= 3; ++i)
         jp.emplace_back(args[i]);
 
-    std::cout << "Mother particle:   " << relhel::to_string(jp[0]) << std::endl;
-    std::cout << "1. decay particle: " << relhel::to_string(jp[1]) << std::endl;
-    std::cout << "2. decay particle: " << relhel::to_string(jp[2]) << std::endl;
+    relhel::JSS jss(jp[0], jp[1], jp[2]);
+    jss.CalcAmpl();
 
-    // TJSS jss(j[0], p[0], j[1], p[1], j[2], p[2]);
-    // jss.CalcAmpl();
-
-    return 1;
+    return 0;
 }
 

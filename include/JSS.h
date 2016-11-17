@@ -1,39 +1,46 @@
-#ifndef TJSS_HH
-#define TJSS_HH
+#ifndef relhel__JSS_h
+#define relhel__JSS_h
 
-#include "TFhh.h"
-#include "TLSAmpl.h"
+/* #include "TFhh.h" */
+/* #include "TLSAmpl.h" */
 
-#include <array>
+#include "QuantumNumbers.h"
+
 #include <vector>
 
-class TJSS
-{
+namespace relhel {
 
+/// 
+class JSS
+{
 public:
 
-    // contsructor
-    TJSS(unsigned J, int eJ, unsigned S1, int e1, unsigned S2, int e2)
-        : J_(J), P_(eJ), j_({S1, S2}), p_({e1, e2}) {}
+    /// contsructor
+    JSS(const QuantumNumbers& parent, const std::vector<QuantumNumbers>& daughters);
 
-    std::vector<TFhh>& fhh()
-    { return FhhAmpl_; }
+    /// contsructor
+    JSS(const QuantumNumbers& parent, const QuantumNumbers& d1, const QuantumNumbers& d2)
+        : JSS(parent, {d1, d2}) {}
+
+    /* std::vector<TFhh>& fhh() */
+    /* { return FhhAmpl_; } */
 
     void CalcAmpl();
 
 private:
 
-    unsigned J_; // mother spin
-    int P_; // mother parity;
-    std::array<unsigned, 2> j_; // daughter spins
-    std::array<int, 2> p_; // daughter parities
+    /// Parent QuantumNumbers
+    QuantumNumbers Parent_;
 
-    std::vector<TLSAmpl> LSAmplitudes_;
-    std::vector<TFhh>    FhhAmpl_;
-    std::vector<TFhh>    FhhIdAmpl_;
+    /// Daughter QuantumNumbers
+    std::vector<QuantumNumbers> Daughters_;
 
-    static unsigned int _debugLevel;
+    /* std::vector<TLSAmpl> LSAmplitudes_; */
+    /* std::vector<TFhh>    FhhAmpl_; */
+    /* std::vector<TFhh>    FhhIdAmpl_; */
 
 };
+
+}
 
 #endif

@@ -16,6 +16,18 @@ namespace relhel {
         positive = +1
     };
 
+    /// negation operator
+    constexpr Parity operator-(const Parity& p)
+    { return (p == Parity::positive) ? Parity::negative : Parity::positive; }
+
+    /// multiplication assignment operator
+    constexpr Parity& operator*=(Parity& lhs, const Parity& rhs)
+    { return lhs = (lhs == Parity::negative) ? -rhs : rhs; }
+
+    /// multiplication operator
+    constexpr Parity operator*(Parity lhs, const Parity& rhs)
+    { return lhs *= rhs; }
+    
     /// convert parity to string
     inline std::string to_string(Parity p)
     { return (p == Parity::positive) ? "+" : "-"; }

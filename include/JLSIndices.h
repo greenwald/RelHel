@@ -3,6 +3,8 @@
 
 #include "JLS.h"
 
+namespace relhel {
+
 /// \class JLSIndices
 /// \brief extends JLS with additional indices
 /// \author Daniel Greenwald
@@ -10,8 +12,11 @@ class JLSIndices : public JLS
 {
 public:
     /// constructor
-    JLSIndices(unsigned j, unsigned l, unsigned s)
-        : JLS(j, l, s) {} 
+    /// \param two_j (twice) the parent spin
+    /// \param l orbital angular momentum
+    /// \param two_s (twice) the spin angular momentum
+    JLSIndices(unsigned two_j, unsigned l, unsigned two_s)
+        : JLS(two_j, l, two_s) {} 
 
     const unsigned psiInternal() const { return PsiInternal_; }
     unsigned& psiInternal() { return PsiInternal_; }
@@ -77,6 +82,8 @@ inline const bool operator==(const JLSIndices& lhs, const JLSIndices& rhs)
     and lhs.phiOmega() == rhs.phiOmega()
     and lhs.phiEps() == rhs.phiEps()
     and lhs.chiEps() == rhs.chiEps();
+}
+
 }
 
 #endif
