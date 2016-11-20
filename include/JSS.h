@@ -35,7 +35,7 @@ private:
     /// Daughter QuantumNumbers
     std::vector<QuantumNumbers> Daughters_;
 
-    /* std::vector<TLSAmpl> LSAmplitudes_; */
+    /* std::vector<LSAmplitude> LSAmplitudes_; */
     /* std::vector<TFhh>    FhhAmpl_; */
     /* std::vector<TFhh>    FhhIdAmpl_; */
 

@@ -23,6 +23,10 @@ constexpr const bool is_even(int v) noexcept
 constexpr int pow_negative_one(int n)
 { return is_odd(n) ? -1 : +1; }
 
+/// \return whether three spins fulfil triangle relationship
+inline const bool triangle(unsigned two_j1, unsigned two_j2, unsigned two_j3)
+{ return two_j3 >= std::abs((int)two_j1 - (int)two_j2) and two_j3 <= (two_j1 + two_j2); }
+
 /// \return vector of (twice) spins from |two_s1-two_s2| to (two_s1 + two_s2)
 const std::vector<unsigned> triangle(unsigned two_s1, unsigned two_s2);
 

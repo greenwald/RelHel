@@ -4,8 +4,11 @@ include_directories(${INCLUDE_DIRECTORIES})
 
 set(RelHel_SOURCES
   ClebschGordan.cxx
+  Contraction.cxx
+  JSS.cxx
   MathUtils.cxx
   RationalNumber.cxx
+  WaveFunction.cxx
 #	ClebschGordanBox.cc
 #	MathUtils.cc
 #	TFhh.cc

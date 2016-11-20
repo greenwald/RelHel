@@ -1,19 +1,23 @@
-#ifndef TLSAmpl_h
-#define TLSAmpl_h
+#ifndef relhel__LSAmpl_h
+#define relhel__LSAmpl_h
 
 #include "JLSIndices.h"
+#include "QuantumNumbers.h"
+
 #include "TJwfTensor.h"
 
-#include <array>
+#include <vector>
 
-/// \class TLSAmpl
+namespace relhel {
+
 /// \brief Relativistic LS-coupling amplitudes
 /// \author Jan.Friedrich@ph.tum.de, Daniel Greenwald
-class TLSAmpl : public JLSIndices
+class LSAmpl : public JLSIndices
 {
 public:
 
-    TLSAmpl(const JLSIndices& jlsi, const std::array<unsigned,2>& j);
+    /// Constructor
+    LSAmpl(const JLSIndices& jlsi, const std::vector<QuantumNumbers>& daughters);
     
     const TTensorSum& tensorSum() const
     { return TSScalar_; }
@@ -24,8 +28,8 @@ public:
 private:
 
     TTensorSum TSScalar_;
-
-    static unsigned int _debugLevel;
 };
+
+}
 
 #endif

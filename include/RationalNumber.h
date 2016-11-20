@@ -167,6 +167,10 @@ public:
     /// convert to double
     explicit operator double() const
     { return Sign_ * static_cast<unsigned>(Numerator_) / static_cast<unsigned>(Denominator_); }
+
+    /// flip the sign
+    void negate()
+    { Sign_ *= -1; }
     
 private:
     
@@ -232,6 +236,22 @@ RationalNumber& operator*=(RationalNumber& lhs, const RationalNumber& rhs);
 /// multiplication
 inline RationalNumber operator*(RationalNumber lhs, const RationalNumber& rhs)
 { return lhs *= rhs; }
+
+/// multiplication assignment
+inline RationalNumber& operator*=(RationalNumber& lhs, const PrimeFactors& rhs)
+{ return lhs = RationalNumber(lhs.numerator() * rhs, lhs.denominator(), lhs.sign()); }
+
+/// multiplication
+inline RationalNumber operator*(RationalNumber lhs, const PrimeFactors& rhs)
+{ return lhs *= rhs; }
+
+/// multiplication
+inline RationalNumber operator*(const PrimeFactors& lhs, RationalNumber rhs)
+{ return rhs *= lhs; }
+
+/// division of two PrimeFactors
+inline RationalNumber operator/(const PrimeFactors& N, const PrimeFactors& D)
+{ return RationalNumber(N, D); }
 
 /// multiple sign factors
 double multiply_sign_factors(double s1, double s2);
