@@ -35,16 +35,20 @@ WaveFunction::WaveFunction(unsigned two_j)
 
     WaveProduct WP(two_j / 2, -2);
 
-    // loop through permutations using odometer method
-    while (WP.back() <= 2) {
-        // add product into sum for corresponding projection
-        Projections_[projection(WP)].push_back(WP);
-        // tick over the first projection
-        WP[0] += 2;
-        // check what projections must be reset or ticked over
-        for (size_t i = 0; (i < WP.size() - 1) and (WP[i] > 2); ++i) {
-            WP[i] = - 2;
-            WP[i + 1] += 2;
+    if (two_j == 0)
+        Projections_[0] = WaveProductSum(1, WP);
+    else {
+         // loop through permutations using odometer method
+        while (WP.back() <= 2) {
+            // add product into sum for corresponding projection
+            Projections_[projection(WP)].push_back(WP);
+            // tick over the first projection
+            WP[0] += 2;
+            // check what projections must be reset or ticked over
+            for (size_t i = 0; (i < WP.size() - 1) and (WP[i] > 2); ++i) {
+                WP[i] = - 2;
+                WP[i + 1] += 2;
+            }
         }
     }
 }
@@ -62,6 +66,18 @@ const unsigned spin(const WaveFunction& wf)
 }
 
 //-------------------------
+const unsigned rank(const WaveFunction& wf)
+{
+    // look for non-empty spin projection in WaveFunction
+    auto it = std::find_if(wf.projections().begin(), wf.projections().end(), [](const WaveFunction::map_type::value_type& m_wps){return !m_wps.second.empty();});
+    // if none, return 0
+    if (it == wf.projections().end())
+        return 0;
+    // return tank of WaveProductSum
+    return rank(it->second);
+}
+
+//-------------------------
 // helper function
 std::string spin_projection_string(unsigned two_j, int two_m)
 { return std::string("|") + spin_to_string(two_j) + ", " + spin_to_string(two_m) + ">"; }
@@ -70,8 +86,6 @@ std::string spin_projection_string(unsigned two_j, int two_m)
 std::string to_string(const WaveFunction& wf)
 {
     auto two_j = spin(wf);
-    if (two_j == 0)
-        return spin_projection_string(0, 0);
     return std::accumulate(wf.projections().begin(), wf.projections().end(), std::string(),
                            [&](std::string& s, const WaveFunction::map_type::value_type& m_wps)
                            {return s += "\n" + spin_projection_string(two_j, m_wps.first) + " = " + to_string(m_wps.second);}).erase(0, 1);

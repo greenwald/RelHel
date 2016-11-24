@@ -29,6 +29,10 @@ inline const int projection(const WaveProduct& v)
 inline const unsigned zeroes(const WaveProduct& v)
 { return std::count(v.begin(), v.end(), 0); }
 
+/// \return rank of WaveProduct
+constexpr unsigned rank(const WaveProduct& w)
+{ return w.size(); }
+
 /// \return total spin of WaveProduct
 constexpr unsigned spin(const WaveProduct& v)
 { return 2 * v.size(); }
@@ -41,6 +45,10 @@ std::string to_string(const WaveProduct& wp);
 
 /// terms in sum of WaveProduct's (without coefficients)
 using WaveProductSum = std::vector<WaveProduct>;
+
+/// \return rank of WaveProductSum
+constexpr unsigned rank(const WaveProductSum& wps)
+{ return wps.empty() ? 0 : rank(wps[0]); }
 
 /// \return spin of WaveProductSum
 constexpr unsigned spin(const WaveProductSum& wps)
@@ -71,6 +79,9 @@ protected:
 
 /// \return spin of WaveFunction
 const unsigned spin(const WaveFunction& wf);
+
+/// \return rank of WaveFunction
+const unsigned rank(const WaveFunction& wf);
 
 /// convert to string
 std::string to_string(const WaveFunction& wf);
@@ -123,7 +134,9 @@ private:
     
 };
 
-
+/// \return rank of coupled wave functions
+inline unsigned rank(const CoupledWaveFunctions& cwf)
+{ return std::accumulate(cwf.phi().begin(), cwf.phi().end(), 0u, [](unsigned r, const WaveFunction& w){return r + rank(w);}); }
 
 }
 
