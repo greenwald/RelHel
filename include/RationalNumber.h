@@ -291,10 +291,6 @@ inline RationalNumber pow(const RationalNumber& f, unsigned n)
 inline RationalNumber abs(const RationalNumber& f)
 { return RationalNumber(f.numerator(), f.denominator(), std::abs(f.sign())); }
 
-/// \todo Delete
-inline RationalNumber sum_roots(const RationalNumber& A, const RationalNumber& B)
-{ return pow(sqrt(A) + sqrt(B), 2); }
-
 }
  
 #endif

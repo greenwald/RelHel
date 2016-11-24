@@ -10,6 +10,7 @@ namespace relhel {
 LSAmpl::LSAmpl(const JLSIndices& jlsi, const std::vector<QuantumNumbers>& daughters)
     : JLSIndices(jlsi)
 {
+    
     auto total_rank = (spin_sum(daughters) + twoJ()) / 2 + L();
     auto even_contraction = is_even(total_rank);
 
