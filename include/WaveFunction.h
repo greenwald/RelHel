@@ -57,6 +57,7 @@ constexpr unsigned spin(const WaveProductSum& wps)
 /// convert to string
 std::string to_string(const WaveProductSum& wps);
 
+/// holds wave functions
 class WaveFunction
 {
 public:
@@ -86,9 +87,8 @@ const unsigned rank(const WaveFunction& wf);
 /// convert to string
 std::string to_string(const WaveFunction& wf);
 
-class OrbitalAngularMomentumWaveFunction : public WaveFunction
-{
-public:
+/// holds orbital angular momentum wave function
+struct OrbitalAngularMomentumWaveFunction : public WaveFunction {
     /// Constructor
     /// \param l orbital angular momentum
     OrbitalAngularMomentumWaveFunction(unsigned l) : WaveFunction(2 * l)
