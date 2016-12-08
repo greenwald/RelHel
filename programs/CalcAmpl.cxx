@@ -2,7 +2,6 @@
 // #include "TJSS.h"
 
 #include "Contraction.h"
-#include "QuantumNumbers.h"
 #include "WaveFunction.h"
 
 #include <iostream>
@@ -20,21 +19,18 @@ std::string to_string(unsigned count, const std::vector<Contraction::Term::index
 int main(int narg, char** args)
 {
 
-    if (narg < 7) {
-        std::cout << "Usage: " << args[0] << " [Mother 2JP] [Daughter 2JP] [Daughter 2JP] [L] [2S] [2M]" << std::endl
-                  << "    2JP takes the form [int][+/-]" << std::endl;
-        return 0;
+    if (narg < 6) {
+        std::cout << "Usage: " << args[0] << " (Mother 2J) (Daughter 2J) (Daughter 2J) (L) (2S) [2M]" << std::endl;
+        return 1;
     }
 
-    std::vector<QuantumNumbers> jp;
+    WaveFunction phi(std::atoi(args[1]));
+    WaveFunction psi1(std::atoi(args[2]));
+    WaveFunction psi2(std::atoi(args[3]));
 
-    for (int i = 1; i <= 3; ++i)
-        jp.emplace_back(args[i]);
-
-    WaveFunction phi(jp[0].twoJ());
-    WaveFunction psi1(jp[1].twoJ());
-    WaveFunction psi2(jp[2].twoJ());
-
+    if (spin(phi) != 0 and narg < 6)
+        throw std::invalid_argument("M is ambiguous, you must state it explicitly; main");
+    
     unsigned L = std::atoi(args[4]);
     unsigned two_S = std::atoi(args[5]);
     unsigned two_M = std::atoi(args[6]);
@@ -44,7 +40,13 @@ int main(int narg, char** args)
               << ", S = " << spin_to_string(two_S)
               << ", M = " << spin_to_string(two_M)
               << std::endl;
-   
+
+    if (!triangle(spin(psi1), spin(psi2), two_S))
+        throw std::invalid_argument("j1:j2:S triangle broken; main");
+
+    if (!triangle(spin(phi), 2 * L, two_S))
+        throw std::invalid_argument("j0:L:S triangle broken; main");
+    
     CoupledWaveFunctions psi(psi1, psi2, two_S, two_M);
 
     OrbitalAngularMomentumWaveFunction chi(L);

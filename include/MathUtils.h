@@ -1,8 +1,6 @@
 #ifndef relhel__MathUtils_h
 #define relhel__MathUtils_h
 
-#include "Parity.h"
-
 #include <cmath>
 #include <cstdlib>
 #include <stdexcept>

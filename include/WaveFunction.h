@@ -1,9 +1,6 @@
 #ifndef relhel__WaveFunction_h
 #define relhel__WaveFunction_h
 
-/* #include "QuantumNumbers.h" */
-/* #include "TJwfTensor.h" */
-
 #include "RationalNumber.h"
 
 #include <algorithm>
@@ -30,11 +27,11 @@ inline const unsigned zeroes(const WaveProduct& v)
 { return std::count(v.begin(), v.end(), 0); }
 
 /// \return rank of WaveProduct
-constexpr unsigned rank(const WaveProduct& w)
+inline const unsigned rank(const WaveProduct& w)
 { return w.size(); }
 
 /// \return total spin of WaveProduct
-constexpr unsigned spin(const WaveProduct& v)
+inline const unsigned spin(const WaveProduct& v)
 { return 2 * v.size(); }
 
 /// \return coefficient of WaveProduct
@@ -47,11 +44,11 @@ std::string to_string(const WaveProduct& wp);
 using WaveProductSum = std::vector<WaveProduct>;
 
 /// \return rank of WaveProductSum
-constexpr unsigned rank(const WaveProductSum& wps)
+inline const unsigned rank(const WaveProductSum& wps)
 { return wps.empty() ? 0 : rank(wps[0]); }
 
 /// \return spin of WaveProductSum
-constexpr unsigned spin(const WaveProductSum& wps)
+inline const unsigned spin(const WaveProductSum& wps)
 { return wps.empty() ? 0 : spin(wps[0]); }
 
 /// convert to string
