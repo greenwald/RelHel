@@ -19,8 +19,8 @@ std::string to_string(unsigned count, const std::vector<Contraction::Term::index
 int main(int narg, char** args)
 {
 
-    if (narg < 6) {
-        std::cout << "Usage: " << args[0] << " (Mother 2J) (Daughter 2J) (Daughter 2J) (L) (2S) [2M]" << std::endl;
+    if (narg < 4) {
+        std::cout << "Usage: " << args[0] << " (Mother 2J) (Daughter 2J) (Daughter 2J) [L] [2S] [2M]" << std::endl;
         return 1;
     }
 
@@ -28,12 +28,33 @@ int main(int narg, char** args)
     WaveFunction psi1(std::atoi(args[2]));
     WaveFunction psi2(std::atoi(args[3]));
 
-    if (spin(phi) != 0 and narg < 6)
+    if (narg < 7 and spin(phi) != 0)
         throw std::invalid_argument("M is ambiguous, you must state it explicitly; main");
-    
-    unsigned L = std::atoi(args[4]);
-    unsigned two_S = std::atoi(args[5]);
-    unsigned two_M = std::atoi(args[6]);
+
+    unsigned L = 0;
+    if (narg < 5) {
+        // can fix S?
+        if (abs(spin(psi1) - spin(psi2)) == (spin(psi1) + spin(psi2))
+            and abs(spin(phi) - spin(psi1) - spin(psi2)) == (spin(phi) + spin(psi1) + spin(psi2)))
+            L = (spin(phi) + spin(psi1) + spin(psi2)) / 2;
+        else
+            throw std::invalid_argument("L is ambiguous, you must state it explicitly; main");
+    } else
+        L = std::atoi(args[4]);
+
+    unsigned two_S = 0;
+    if (narg < 6) {
+        if (abs(spin(phi) - 2 * L) == (spin(phi) + 2 * L))
+            two_S = spin(phi) + 2 * L;
+        else if (abs(spin(psi1) - spin(psi2)) == (spin(psi1) + spin(psi2)))
+            two_S = spin(psi1) + spin(psi2);
+        else
+            throw std::invalid_argument("S is ambiguous, you must state it explicitly; main");
+    } else
+        two_S = std::atoi(args[5]);
+
+    int two_M = (narg < 7) ? 0 : std::atoi(args[6]);
+
 
     std::cout << "(" + spin_to_string(spin(phi)) + ") -> (" + spin_to_string(spin(psi1)) + ") + (" + spin_to_string(spin(psi2)) + ")"
               << ", L = " << L
