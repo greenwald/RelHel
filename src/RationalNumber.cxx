@@ -339,7 +339,7 @@ std::array<RationalNumber, 2> factorize_sqrt(const RationalNumber& f)
     // factorize numerator and denominator
     auto N = factorize_sqrt(f.numerator());
     auto D = factorize_sqrt(f.denominator());
-    // and create new rational numbers
+        // and create new rational numbers
     return {RationalNumber(N[0], D[0], f.sign()), RationalNumber(N[1], D[1], 1)};
 }
 

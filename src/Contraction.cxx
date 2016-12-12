@@ -2,208 +2,404 @@
 
 #include "ClebschGordan.h"
 
-#include <algorithm>
-
-#include <iostream>
-
 namespace relhel {
 
 //-------------------------
-namespace contractions {
-const std::vector<Contraction::Term::index> psi1_psi2 = {Contraction::Term::index::psi1, Contraction::Term::index::psi2};
-const std::vector<Contraction::Term::index> psi1_chi  = {Contraction::Term::index::psi1, Contraction::Term::index::chi};
-const std::vector<Contraction::Term::index> psi2_chi  = {Contraction::Term::index::psi2, Contraction::Term::index::chi};
-const std::vector<Contraction::Term::index> psi1_phi  = {Contraction::Term::index::psi1, Contraction::Term::index::phi};
-const std::vector<Contraction::Term::index> psi2_phi  = {Contraction::Term::index::psi2, Contraction::Term::index::phi};
-const std::vector<Contraction::Term::index> chi_phi   = {Contraction::Term::index::chi,  Contraction::Term::index::phi};
+GammaPolynomial::GammaPolynomial(const std::vector<GammaIndex>& I) :
+    Indices_(I)
+{
+    // sort Indices
+    std::sort(Indices_.begin(), Indices_.end());
+    if (std::adjacent_find(Indices_.begin(), Indices_.end()) != Indices_.end())
+        throw std::invalid_argument("indices not unique; GammaPolynomial::GammaPolynomial");
 }
 
 //-------------------------
-Contraction::Contraction(const CoupledWaveFunctions& psi, const OrbitalAngularMomentumWaveFunction& chi, const WaveFunction& phi)
+GammaPolynomial::Term& operator*=(GammaPolynomial::Term& lhs, const GammaPolynomial::Term& rhs)
 {
-    // if chi has no projection = zero wave functions
-    if (chi.projections().at(0).empty())
-        return;
-    
-    // loop over spin projections of first daughter
-    for (const auto& m_wps : psi.phi()[0].projections()) {
-        if (m_wps.second.empty())
-            continue;
-
-        // find appropriate spin projection of second daughter
-        auto it = psi.phi()[1].projections().find(psi.delta() - m_wps.first);
-        if (it == psi.phi()[1].projections().end() or it->second.empty())
-            continue;
-
-        // loop over WaveProduct's of first daughter
-        for (const auto& wp1 : m_wps.second) {
-            auto two_j1 = spin(wp1);
-            auto wp1_coeff = squared_coefficient(wp1);
-            
-            // loop over WaveProduct's of second daughter
-            for (const auto& wp2 : it->second) {
-                auto two_j2 = spin(wp2);
-                auto psi_coeff = wp1_coeff * squared_coefficient(wp2)
-                    * ClebschGordan::squared_coefficient(two_j1, m_wps.first, two_j2, it->first, psi.twoS());
-                
-                // loop over WaveProduct's of orbital angular momentum
-                for (const auto& wp_chi : chi.projections().at(0)) {
-                    auto l = spin(wp_chi) / 2;
-
-                    auto psi_chi_coeff = psi_coeff * squared_coefficient(wp_chi) * pow(decompose(2), l);
-                                
-                    // loop over projections of initial state
-                    for (const auto& m_wps_phi : phi.projections())
-                        // loop over WaveProduct's of initial state
-                        for (const auto& wp_phi : m_wps_phi.second)
-                    
-                            Terms_.emplace_back(wp1, wp2, wp_chi, wp_phi, squared_coefficient(wp_phi) * psi_chi_coeff);
-                                 
-                }
-            }
-        }
-    }
-    prune();
-}
-
-//-------------------------
-const std::vector<int> gamma_exponents(const Contraction::Term& t, const std::vector<Contraction::Term::index>& I)
-{
-     std::vector<int> g;
-     g.reserve(I.size());
-     std::transform(I.begin(), I.end(), std::back_inserter(g), [&t](Contraction::Term::index i){return t.GammaExponents[static_cast<size_t>(i)]; });
-     return g;
-}
-
-//-------------------------
-// helper function
-GammaPolynomial& add_term(GammaPolynomial& P, const GammaPolynomial::key_type& ges, const GammaPolynomial::mapped_type::value_type& coeff)
-{
-    // look for term with same exponents
-    auto it = P.find(ges);
-    // if found
-    if (it != P.end()) {
-        // look for coefficient term with same argument under the square root
-        auto it2 = std::find_if(it->second.begin(), it->second.end(),
-                                [&coeff](const GammaPolynomial::mapped_type::value_type& r)
-                                {return r.second == coeff.second;});
-        // if one is found, add arguments outside of square root sign
-        if (it2 != it->second.end()) {
-            it2->first += coeff.first;
-            if (it2->first == 0)
-                it->second.erase(it2);
-        }
-        // else add new term completely
-        else it->second.push_back(coeff);
-    }
-    // else add new term
-    else {
-        P[ges].push_back(coeff);
-    }
-    return P;
-}
-
-//-------------------------
-// helper function
-GammaPolynomial& add_term(GammaPolynomial& P, const GammaPolynomial::key_type& ges, const GammaPolynomial::mapped_type& coeffs)
-{
-    std::for_each(coeffs.begin(), coeffs.end(), [&](const GammaPolynomial::mapped_type::value_type& c){add_term(P, ges, c);});
-    return P;
-}
-
-//-------------------------
-// helper function
-GammaPolynomial& add_term(GammaPolynomial& P, const GammaPolynomial::value_type& ges_coeffs)
-{ return add_term(P, ges_coeffs.first, ges_coeffs.second); }
-
-//-------------------------
-const GammaPolynomial gamma_polynomial(const std::vector<Contraction::Term>& terms)
-{
-    if (std::any_of(terms.begin(), terms.end(), [](const Contraction::Term& t){return rank(t) > 0;}))
-        throw std::invalid_argument("Terms are not scalar; gamma_polynomial(...)");
-    
-    GammaPolynomial P;
-
-    for (const auto& t : terms) {
-        auto c = factorize_sqrt(t.SquaredCoefficient);
-        add_term(P, gamma_exponents(t, contractions::psi1_psi2), std::make_pair(static_cast<double>(sqrt(c[0])), c[1]));
-    }
-    
-    return P;
-}
-
-//-------------------------
-// helper function
-std::string to_exp_string(const GammaPolynomial::key_type& ges)
-{
-    std::string S;
-    for (size_t i = 0; i < ges.size(); ++i)
-        S += exponential_string(" * g_" + std::to_string(i + 1), ges[i]);
-    return (S.empty()) ? S : S.erase(0, 3);
-}
-
-//-------------------------
-// helper function
-std::string to_coef_string(const GammaPolynomial::mapped_type& coefs)
-{
-    return "("
-        + std::accumulate(coefs.begin(), coefs.end(), std::string(""),
-                          [](std::string& S, const GammaPolynomial::mapped_type::value_type& r)
-                          {return S += " + " + to_sqrt_string(RationalNumber(r.first * std::abs(r.first)) * r.second);}).erase(0, 3)
-        + ")";
-}
-
-//-------------------------
-GammaPolynomial& operator+=(GammaPolynomial& lhs, const GammaPolynomial& rhs)
-{
-    for (const auto& term : rhs)
-        add_term(lhs, term);
+    std::vector<RationalNumber> C2;
+    for (const auto& c2_l : lhs.SquaredCoefficients)
+        for (const auto& c2_r : rhs.SquaredCoefficients)
+            C2.push_back(c2_l * c2_r);
+    lhs.SquaredCoefficients = C2;
+    std::transform(lhs.Exponents.begin(), lhs.Exponents.end(), rhs.Exponents.begin(), lhs.Exponents.begin(), std::plus<unsigned>());
     return lhs;
 }
 
 //-------------------------
-std::string to_string(const GammaPolynomial::value_type& ges_coefs)
+GammaPolynomial& GammaPolynomial::operator+=(const Term& term)
 {
-    auto s_ge = to_exp_string(ges_coefs.first);
-    return s_ge + (!s_ge.empty() ? " * " : "") + to_coef_string(ges_coefs.second);
-}
-
-//-------------------------
-std::string to_string(const GammaPolynomial& gp)
-{
+    // look for a term with the same exponents
+    auto it = std::find_if(Terms_.begin(), Terms_.end(), std::bind(same_exponents, term, std::placeholders::_1, indices()));
     
-    return std::accumulate(gp.begin(), gp.end(), std::string(),
-                           [](std::string& s, const GammaPolynomial::value_type& t){return s += " + " + to_string(t);}).erase(0, 3);
+    // if none found
+    if (it == Terms_.end()) {
+        // add new term
+        Terms_.push_back(term);
+        return *this;
+    }
+
+    // else add to existing term
+    for (const auto& c2 : term.SquaredCoefficients) {
+        
+        auto sqrt_c2 = factorize_sqrt(c2);
+
+        // look for squared coefficient with same unsqrt'able part
+        for (auto& C2 : it->SquaredCoefficients) {
+
+            auto sqrt_C2 = factorize_sqrt(C2);
+
+            // if unsqrt'able part is the same, add sqrt's of sqrt'able part
+            if (sqrt_C2[1] == sqrt_c2[1]) {
+                C2 = sqrt_C2[1] * pow(sqrt(sqrt_C2[0]) + sqrt(sqrt_c2[0]) , 2);
+                sqrt_c2[0] = RationalNumber(0);
+            }
+        }
+
+        // if none found
+        if (!is_zero(sqrt_c2[0]))
+            it->SquaredCoefficients.push_back(c2);
+    }
+
+    // remove zero'ed coeffs
+    it->SquaredCoefficients.erase(std::remove_if(it->SquaredCoefficients.begin(), it->SquaredCoefficients.end(), is_zero), it->SquaredCoefficients.end());
+
+    // if term now empty, remove it
+    if (it->SquaredCoefficients.empty())
+        Terms_.erase(it);
+
+    return *this;
 }
 
 //-------------------------
-std::string to_string(const Contraction::Term& term)
+std::vector<EpsilonContraction> epsilon_contractions(const std::vector<unsigned>& r)
 {
-    return std::accumulate(term.WaveProducts.begin(), term.WaveProducts.end(), std::string(),
-                           [](std::string& s, const WaveProduct& w){return s += ", " + to_string(w);}).erase(0, 2)
-        + " : Gamma(" + std::accumulate(term.GammaExponents.begin(), term.GammaExponents.end(), std::string(),
-                                        [](std::string& s, int g){return s += ", " + std::to_string(g);}).erase(0, 2) + ")"
-        + " * " + to_sqrt_string(term.SquaredCoefficient);
+    if (r.size() > GammaIndex::n_indices)
+        throw std::invalid_argument("rank vector too large; epsilon_contractions");
+
+    // if even total rank
+    if (is_even(std::accumulate(r.begin(), r.end(), 0u)))
+        return {{}};
+
+    // else
+    std::vector<EpsilonContraction> B;
+
+    for (unsigned i = 0; i <= r.size() - 3; ++i)
+        if (r[i] > 0)
+            for (unsigned j = i + 1; j <= r.size() - 2; ++j)
+                if (r[j] > 0)
+                    for (unsigned k = j + 1; k <= r.size() - 1; ++k)
+                        if (r[k] > 0)
+                            B.push_back({static_cast<GammaIndex>(i), static_cast<GammaIndex>(j), static_cast<GammaIndex>(k)});
+    return B;
 }
 
 //-------------------------
-std::string to_string(const std::vector<Contraction::Term>& terms)
+// return vector of contraction matrices
+std::set<ContractionMatrix> contraction_matrices(std::vector<unsigned> r, const EpsilonContraction& b)
 {
-    return std::accumulate(terms.begin(), terms.end(), std::string(),
-                           [](std::string& s, const Contraction::Term& t){return s += "\n" + to_string(t);}).erase(0, 1);
+    // modify ranks by epsilon contraction
+    for (auto i : b)
+        --r[i];
+
+    std::set<ContractionMatrix> S;
+    ContractionMatrix C(r.size() - 1, ContractionMatrix::value_type(r.size(), 0));
+
+    // loop through contractions odometer style
+    while (C.back().back() <= std::min(r[r.size() - 2], r.back())) {
+        
+        // check if contraction is full (over all ranks)
+        std::vector<unsigned> c(r.size(), 0);
+        for (size_t i = 0; i < C.size(); ++i)
+            for (size_t j = i + 1; j < C[i].size(); ++j) {
+                c[i] += C[i][j];
+                c[j] += C[i][j];
+            }
+        if (c == r)
+            S.insert(C);
+
+        // increment odometer
+        ++C[0][1];
+        
+        size_t i = 0;
+        size_t j = 1;
+        while(C[i][j] > std::min(r[i], r[j])) {
+            C[i][j] = 0;
+            
+            ++j;
+            
+            if (j >= C[i].size()) {
+                ++i;
+                j = i + 1;
+            }
+            
+            ++C[i][j];
+            
+            if (i == C.size() - 1 and j == C.size())
+                break;
+        }
+    }
+
+    return S;
 }
 
 //-------------------------
-std::string to_string(Contraction::Term::index i)
+std::map<EpsilonContraction, std::set<ContractionMatrix> > contractions(const CoupledWaveFunctions& psi,
+                                                                        const OrbitalAngularMomentumWaveFunction& chi,
+                                                                        const WaveFunction& phi)
+{
+    std::map<EpsilonContraction, std::set<ContractionMatrix> > M;
+
+    std::vector<unsigned> r = {rank(psi, 0), rank(psi, 1), rank(chi), rank(phi)};
+    
+    // loop over epsilon contractions
+    for (const auto& b : epsilon_contractions(r))
+        // loop through possible contractions
+        for (const auto& C : contraction_matrices(r, b))
+            M[b].insert(C);
+
+    return M;
+}
+
+//-------------------------
+std::string to_string(const std::map<EpsilonContraction, std::set<ContractionMatrix> >& bC)
+{
+    std::string S;
+    for (const auto& b_S : bC)
+        for (const auto& C : b_S.second) {
+            std::string s;
+            for (size_t i = 0; i < C.size(); ++i)
+                for (size_t j = 0; j < C[i].size(); ++j)
+                    if (C[i][j] > 0)
+                        s += "  +  " + std::to_string(C[i][j]) + " * [" + to_string(static_cast<GammaIndex>(i))
+                            + " x " + to_string(static_cast<GammaIndex>(j)) + "]";
+            if (!b_S.first.empty())
+                s += "  +  [" + std::accumulate(b_S.first.begin(), b_S.first.end(), std::string(),
+                                           [](std::string& s, GammaIndex bi)
+                                           {return s += " x " + to_string(bi);}).erase(0, 3) + "]";
+            S += s.erase(0, 5) + "\n";
+        }
+    return S;
+}
+
+//-------------------------
+// set to zero and return through
+GammaPolynomial::Term& zero(GammaPolynomial::Term& term)
+{
+    for (auto& c2 : term.SquaredCoefficients)
+        c2 = RationalNumber(0);
+    return term;
+}
+
+//-------------------------
+// negate and return through
+GammaPolynomial::Term& negate(GammaPolynomial::Term& term)
+{
+    for (auto& c2 : term.SquaredCoefficients)
+        c2.negate();
+    return term;
+}
+
+//-------------------------
+// perform single contraction
+const GammaPolynomial::Term contract(std::vector<WaveProduct>& WP, unsigned i, unsigned j)
+{
+    GammaPolynomial::Term term;
+    
+    /////////////////////////
+    // get projections to contract, popping them off their WaveProduct's
+    std::vector<int> m;
+    m.push_back(WP[i].back()); WP[i].pop_back();
+    m.push_back(WP[j].back()); WP[j].pop_back();
+    
+    // increase gamma factors
+    if (m[0] == 0) ++term.Exponents[i];
+    if (m[1] == 0) ++term.Exponents[j];
+    
+    // if contracting with phi
+    if (j == GammaIndex::phi) {
+        // if projections not the same
+        if (m[0] != m[1])
+            zero(term);
+        return term;
+    }
+
+    // else
+    // if opposite signs
+    if (m[0] * m[1] < 0)
+        negate(term);
+        
+    // if contracting with chi, and not opposite signed (or both zero)
+    if (j == GammaIndex::chi and m[0] != -m[1])
+        zero(term);
+
+    return term;
+}
+
+//-------------------------
+// perform single epsilon contraction
+const GammaPolynomial::Term contract(std::vector<WaveProduct>& WP, const EpsilonContraction& b)
+{
+    GammaPolynomial::Term term;
+    
+    // get projections, and pop off elements
+    std::vector<int> m;
+    for (auto i : b) {
+        m.push_back(WP[i].back());
+        WP.pop_back();
+    }
+    
+    // increase gamma factors
+    for (size_t i = 0; i < m.size(); ++i)
+        if (m[i] == 0) ++term.Exponents[b[i]];
+    
+    // if not one and only one spin projection is zero
+    if (std::count(m.begin(), m.end(), 0) != 1)
+        return zero(term);
+
+    // or the first two projections are equal
+    if (m[0] == m[1])
+        return zero(term);
+
+    if (m[2] != 0) {
+        // if contracting with initial state
+        if (b[2] == GammaIndex::phi) {
+            if (m[0] + m[1] + m[2] == 0)
+                return zero(term);
+        } else {
+            if (m[2] != 0 and m[0] + m[1] + m[2] != 0)
+                return zero(term);
+        }
+    }
+    
+    // not yet zero'ed, check negation situations
+
+    // if m[2] == 0, m[0] dictates sign
+    if (m[2] == 0 and m[0] < 0)
+        negate(term);
+        
+    // if m[1] == 0, m[2] dictates sign
+    if (m[1] == 0 and m[2] < 0)
+        negate(term);
+        
+    // if m[0] == 0, m[2] dictates sign
+    if (m[0] == 0 and m[2] > 0)
+        negate(term);
+
+    return term;
+}
+
+//-------------------------
+// perform contractions
+const GammaPolynomial::Term contract(std::vector<WaveProduct>& WP, const ContractionMatrix& C, const EpsilonContraction& b)
+{
+    GammaPolynomial::Term term;
+
+    for (size_t i = 0; i < C.size() and !is_zero(term.SquaredCoefficients[0]); ++i)
+        for (size_t j = i + 1; j < C[i].size() and !is_zero(term.SquaredCoefficients[0]); ++j)
+            for (size_t c = 0; c < C[i][j] and !is_zero(term.SquaredCoefficients[0]); ++c)
+                term *= contract(WP, i, j);
+    
+    if (is_zero(term.SquaredCoefficients[0]))
+        return term;
+
+    return term *= contract(WP, b);
+}
+
+//-------------------------
+// return C-G coeff^2
+const RationalNumber squared_CG(const std::vector<WaveProduct>& WP, unsigned two_S)
+{
+    return ClebschGordan::squared_coefficient(spin(WP[GammaIndex::psi1]), projection(WP[GammaIndex::psi1]),
+                                              spin(WP[GammaIndex::psi2]), projection(WP[GammaIndex::psi2]),
+                                              two_S);
+}
+
+//-------------------------
+// product of squared_coefficient for each WaveProdcut * CG-Coeff * 2^L
+const RationalNumber squared_coefficient(const std::vector<WaveProduct>& WP, unsigned two_S)
+{
+    return std::accumulate(WP.begin(), WP.end(), squared_CG(WP, two_S) * pow(decompose(2), spin(WP[GammaIndex::chi]) / 2),
+                           [](RationalNumber& c2, const WaveProduct& wp){return c2 *= squared_coefficient(wp);});
+}
+
+//-------------------------
+const GammaPolynomial contract(const CoupledWaveFunctions& psi, const OrbitalAngularMomentumWaveFunction& chi, const WaveFunction& phi, const std::vector<GammaIndex>& I)
+{
+    /////////////////////////
+    // Create vector of wave product combinations to contract
+    std::vector<std::vector<WaveProduct> > WPV;
+    // loop over CoupledWaveProducts of psi
+    for (const auto& cwp_psi : psi.products())
+        // loop over WaveProducts of chi
+        for (const auto& wp_chi : chi.projections().at(0))
+            // loop over WaveProducts of phi
+            for (const auto& wp_phi : phi.projections().at(projection(cwp_psi[0]) - projection(cwp_psi[1])))
+                WPV.push_back({cwp_psi[0], cwp_psi[1], wp_chi, wp_phi});
+
+    // store ranks
+    std::vector<unsigned> r = {rank(psi, 0), rank(psi, 1), rank(chi), rank(phi)};
+
+    GammaPolynomial P(I);
+    
+    // loop over epsilon contractions
+    for (const auto& b : epsilon_contractions(r)) {
+
+        /////////////////////////
+        // loop through possible contractions
+        for (const auto& C : contraction_matrices(r, b)) {
+
+            // loop over WPs
+            for (auto WP : WPV) {
+
+                // calculate squared coefficient
+                RationalNumber C2 = squared_coefficient(WP, psi.spin());
+                
+                GammaPolynomial::Term term = contract(WP, C, b);
+
+                if (is_zero(term.SquaredCoefficients[0]))
+                    continue;
+
+                if (std::any_of(WP.begin(), WP.end(), [](const WaveProduct& wp){return !wp.empty();}))
+                    throw std::runtime_error("wave functions not fully contracted; contract");
+
+                term.SquaredCoefficients[0] *= C2;
+
+                P += term;
+            }
+        }
+    }
+    return P;
+}
+
+//-------------------------
+std::string to_index_string(GammaIndex i)
 {
     switch(i) {
-    case Contraction::Term::index::psi1:
+    case GammaIndex::psi1:
+        return "1";
+    case GammaIndex::psi2:
+        return "2";
+    case GammaIndex::chi:
+        return "l";
+    case GammaIndex::phi:
+        return "0";
+    default:
+        return std::to_string(static_cast<size_t>(i));
+    }
+}
+
+//-------------------------
+std::string to_string(GammaIndex i)
+{
+    switch(i) {
+    case GammaIndex::psi1:
         return "psi1";
-    case Contraction::Term::index::psi2:
+    case GammaIndex::psi2:
         return "psi2";
-    case Contraction::Term::index::chi:
+    case GammaIndex::chi:
         return "chi";
-    case Contraction::Term::index::phi:
+    case GammaIndex::phi:
         return "phi";
     default:
         return std::to_string(static_cast<size_t>(i));
@@ -211,109 +407,41 @@ std::string to_string(Contraction::Term::index i)
 }
 
 //-------------------------
-const std::vector<Contraction::Term::index> triple_contraction(const Contraction::Term& t)
+std::string to_string(const GammaPolynomial::Term& t, const std::vector<GammaIndex>& I)
 {
-    std::vector<Contraction::Term::index> I;
-    if (rank(t) != 3 or std::count_if(t.WaveProducts.begin(), t.WaveProducts.end(), [](const WaveProduct& w){return rank(w) == 1;}) != 3)
-        return I;
-    I = {Contraction::Term::index::psi1, Contraction::Term::index::psi2, Contraction::Term::index::chi, Contraction::Term::index::phi};
-    I.erase(I.begin() + std::distance(t.WaveProducts.begin(), std::find_if(t.WaveProducts.begin(), t.WaveProducts.end(), [](const WaveProduct& w){return rank(w) == 0;})));
-    return I;
+    if (t.SquaredCoefficients.empty())
+        return "(zero)";
+    
+    // get exponent string
+    std::string exp_s;
+    for (auto i : I)
+        exp_s += exponential_string(" * g_" + to_index_string(i), t.Exponents[i]);
+    if (!exp_s.empty())
+        exp_s.erase(0, 3);
+
+    // get coefficient string
+    std::string coef_s;
+    for (const auto& c2 : t.SquaredCoefficients)
+        coef_s += " + " + to_sqrt_string(c2);
+    coef_s.erase(0, 3);
+    if (t.SquaredCoefficients.size() > 1)
+        coef_s = "(" + coef_s + ")";
+
+    if (exp_s.empty())
+        return coef_s;
+
+    if (t.SquaredCoefficients.size() == 1 and is_one(t.SquaredCoefficients[0]))
+        return exp_s;
+        
+    return exp_s + " * " + coef_s;
 }
 
 //-------------------------
-std::string to_string(const std::vector<Contraction::Term::index>& I)
-{ return std::accumulate(I.begin(), I.end(), std::string(""), [](std::string& s, Contraction::Term::index i){return s += ", " + to_string(i);}).erase(0, 2); }
-
-//-------------------------
-void Contraction::Term::contract(std::vector<index> I)
+std::string to_string(const GammaPolynomial& P)
 {
-    // check size
-    if (I.size() < 2 or I.size() > 3)
-        throw std::invalid_argument("Invalid number of contraction indices; contract(" + to_string(I) + ")");
-
-    // check no WaveFunction is empty
-    if (std::any_of(I.begin(), I.end(), [&](index i){return WaveProducts[static_cast<size_t>(i)].empty();})) {
-        std::vector<index> J;
-        J.reserve(I.size());
-        std::copy_if(I.begin(), I.end(), std::back_inserter(J), [&](index i){return WaveProducts[static_cast<size_t>(i)].empty();});
-        throw std::invalid_argument("Rank-zero Wave function(s) " + to_string(J) + "; contract(" + to_string(I) + ")");
-    }
-    
-    // sort I (aids checking in the 3-index situation below)
-    std::sort(I.begin(), I.end(), [](index a, index b){return std::less<size_t>()(static_cast<size_t>(a), static_cast<size_t>(b));});
-    
-    // check no index is repeated
-    if (std::adjacent_find(I.begin(), I.end()) != I.end())
-        throw std::invalid_argument("Can't contract WaveFunction with itself; contract(" + to_string(I) + ")");
-
-    // get back elements and pop them off
-    std::vector<int> m;
-    m.reserve(I.size());
-    for (auto i : I) {
-        m.push_back(WaveProducts[static_cast<size_t>(i)].back());
-        WaveProducts[static_cast<size_t>(i)].pop_back();
-    }
-
-    // two WaveFunction's contracted
-    if (I.size() == 2) {
-
-        // if contracting with phi
-        if (I[1] == index::phi) {
-            // if not the same 
-            if (m[0] != m[1])
-                SquaredCoefficient = RationalNumber(0);
-        }
-        else {
-            // if opposite signs
-            if (m[0] * m[1] < 0)
-                SquaredCoefficient.negate();
-            
-            // if contracting with chi, and not opposite signed (or both zero)
-            if (I[1] == index::chi and m[0] != -m[1])
-                SquaredCoefficient = RationalNumber(0);
-        }
-    }
-    // three WaveFunction's contracted
-    else {
-
-        // if not one and only one spin projection is zero
-        if (std::count(m.begin(), m.end(), 0) != 1)
-            SquaredCoefficient = RationalNumber(0);
-        // or the first two projections are equal
-        else if (m[0] == m[1])
-            SquaredCoefficient = RationalNumber(0);
-        else if (m[2] != 0) {
-            // if contracting with initial state
-            if (I[2] == index::phi) {
-                if (m[0] + m[1] + m[2] == 0)
-                    SquaredCoefficient = RationalNumber(0);
-            } else {
-                if (m[2] != 0 and m[0] + m[1] + m[2] != 0)
-                    SquaredCoefficient = RationalNumber(0);
-            }
-        }
-
-        // if not yet zero'ed, check negation situations
-        if (!is_zero(SquaredCoefficient)) {
-
-            // if m[2] == 0, m[0] dictates sign
-            if (m[2] == 0 and m[0] < 0)
-                SquaredCoefficient.negate();
-            
-            // if m[1] == 0, m[2] dictates sign
-            if (m[1] == 0 and m[2] < 0)
-                SquaredCoefficient.negate();
-            
-            // if m[0] == 0, m[2] dictates sign
-            if (m[0] == 0 and m[2] > 0)
-                SquaredCoefficient.negate();
-        }
-    }
-
-    // increase relevant gamma factors
-    for (size_t i = 0; i < I.size(); ++i)
-        if (m[i] == 0) ++GammaExponents[static_cast<size_t>(I[i])];
+    return std::accumulate(P.terms().begin(), P.terms().end(), std::string(),
+                           [&](std::string& s, const GammaPolynomial::Term& t)
+                           {return s += " + " + to_string(t, P.indices());}).erase(0, 3);
 }
 
 }

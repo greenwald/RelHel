@@ -1,0 +1,135 @@
+\documentclass[a4paper]{article}
+
+\usepackage{amsmath}
+
+\begin{document}
+
+\[
+r'_i \equiv r_i - b_i
+\]
+
+\[
+\left[
+  \begin{array}{cccc}
+    1 & 1 & 0 & 0\\
+    0 & 0 & 1 & 1\\
+    1 & 0 & 1 & 0\\
+    0 & 1 & 0 & 1
+  \end{array}
+  \right]
+\left[\begin{array}{c} n_{1\chi} \\ n_{1\phi} \\ n_{2\chi} \\ n_{2\phi}  \end{array}\right]
+= 
+\left[\begin{array}{c} r'_1 - n_{12}\\ r'_2 - n_{12}\\ r'_\chi - n_{\chi\phi}\\ r'_\phi - n_{\chi\phi} \end{array}\right]
+\equiv 
+\left[\begin{array}{c} r''_1\\ r''_2\\ r''_\chi\\ r''_\phi \end{array}\right]
+\]
+
+\[
+D =
+\left|
+\begin{array}{cccc}
+  1 & 1 & 0 & 0\\
+  0 & 0 & 1 & 1\\
+  1 & 0 & 1 & 0\\
+  0 & 1 & 0 & 1
+\end{array}
+\right|
+=
+\left|
+\begin{array}{ccc}
+  0 & 1 & 1\\
+  0 & 1 & 0\\
+  1 & 0 & 1
+\end{array}
+\right|
++
+\left|
+\begin{array}{ccc}
+  1 & 0 & 0\\
+  0 & 1 & 1\\
+  1 & 0 & 1
+\end{array}
+\right|
+=
+\left|
+\begin{array}{cc}
+  1 & 1\\
+  1 & 0
+\end{array}
+\right|
++
+\left|
+\begin{array}{cc}
+1 & 1\\
+0 & 1
+\end{array}
+\right|
+= -1 + 1 = 0
+\]
+
+\hline
+
+\begin{eqnarray*}
+  r'_1 & = & n_{12} + n_{1\chi} + n_{1\phi}\\
+  r'_2 & = & n_{12} + n_{2\chi} + n_{2\phi}\\
+  r'_\chi & = & n_{1\chi} + n_{2\chi} + n_{\chi\phi}\\
+  r'_\phi & = & n_{1\phi} + n_{2\phi} + n_{\chi\phi}
+\end{eqnarray*}
+
+\[
+n_{12} \le r'_1, r'_2 \qquad n_{\chi\phi} \le r'_\chi, r'_\phi
+\]
+
+\[
+n_{1\chi} = r'_1 - n_{12} - n_{1\phi} \qquad \boxed{ n_{2\chi} = r'_2 - n_{12} - n_{2\phi} }
+\]
+
+\[
+\boxed{ n_{1\phi} = r'_\phi - n_{\chi\phi} - n_{2\phi} }
+\]
+
+\[
+\boxed{ n_{1\chi} = r'_1 - r'_\phi - n_{12} + n_{\chi\phi} + n_{2\phi} }
+\]
+
+\[
+
+\]
+
+\hline
+
+
+\[
+\Rightarrow r'_1 + r'_2 - r'_\chi - r'_\phi = 2(n_{12} - n_{\chi\phi})
+\]
+\[
+\Rightarrow \boxed{ n_{12} = \frac{1}{2}\left[r'_1 + r'_2 - r'_\chi - r'_\phi\right] + n_{\chi\phi} }
+\]
+
+\[
+\Rightarrow \boxed{ n_{1\chi} = \frac{1}{2}\left[r'_\chi + r'_\phi + r'_1 - r'_2\right] - n_{\chi\phi} - n_{1\phi} }
+\]
+\[
+\Rightarrow n_{2\chi} = \frac{1}{2}\left[r'_\chi + r'_\phi + r'_2 - r'_1\right] - n_{\chi\phi} - n_{2\phi}
+\]
+\[
+\Rightarrow \boxed{ n_{2\chi} = \frac{1}{2}\left[r'_\chi - r'_\phi + r'_2 - r'_1\right] + n_{1\phi} }
+\]
+\[
+\boxed{ n_{2\phi} = r'_\phi - n_{\chi\phi} - n_{1\phi} }
+\]
+
+\begin{eqnarray*}
+  \Rightarrow n_{1\chi} & = & \frac{1}{2}\left[r'_\chi - r'_\phi + r'_1 - r'_2\right] + n_{2\phi} = r'_\chi - n_{2\chi} - n_{\chi\phi}\\
+  \Rightarrow n_{2\chi} & = & \frac{1}{2}\left[r'_\chi - r'_\phi + r'_2 - r'_1\right] + n_{1\phi} = r'_\chi - n_{1\chi} - n_{\chi\phi}
+\end{eqnarray*}
+
+\[
+\boxed{ n_{1\chi} = \frac{1}{2}\left[r'_\chi + r'_\phi + r'_1 - r'_2\right] - n_{1\phi} - n_{\chi\phi} }
+\]
+\[
+n_{1\phi} = \frac{1}{2}\left[ r'_\chi + r'_\phi + r'_1 - r'_2 \right] - n_{\chi\phi} - n_{1\chi}
+\]
+
+
+\end{document}

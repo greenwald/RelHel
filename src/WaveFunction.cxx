@@ -1,5 +1,7 @@
 #include "WaveFunction.h"
 
+#include "ClebschGordan.h"
+
 #include <stdexcept>
 
 namespace relhel {
@@ -92,20 +94,35 @@ std::string to_string(const WaveFunction& wf)
 }
 
 //-------------------------
-CoupledWaveFunctions::CoupledWaveFunctions(const WaveFunction& phi1, const WaveFunction& phi2, unsigned two_s, int delta)
-    : Phi_({phi1, phi2}), TwoS_(two_s), Delta_(delta)
+CoupledWaveFunctions::CoupledWaveFunctions(const WaveFunction& A, const WaveFunction& B, unsigned two_s, int two_m) :
+    TwoS_(two_s)
 {
-    auto two_j0 = spin(Phi_[0]);
-    auto two_j1 = spin(Phi_[1]);
+    auto two_jA = ::relhel::spin(A);
+    auto two_jB = ::relhel::spin(B);
+
+    if (!triangle(two_jA, two_jB, TwoS_))
+        throw std::invalid_argument("triangle(A, B, S) unfulfilled; CoupledWaveFunctions");
     
-    if (!triangle(two_j0, two_j1, TwoS_))
-        throw std::invalid_argument("invalid spins for coupling: triangle("
-                                    + spin_to_string(two_j0) + ", "
-                                    + spin_to_string(two_j1) + ", "
-                                    + spin_to_string(TwoS_) + ") = false; get_spin_coupled_tensor_sum(...)");
-    
-    if (is_odd(two_j0 + two_j1 + Delta_) or std::abs(Delta_) > (two_j0 + two_j1))
-        throw std::invalid_argument("invalid spin projection for coupled state; get_spin_coupled_tensor_sum(...)");
+    if (is_odd(TwoS_ + two_m) or std::abs(two_m) > TwoS_)
+        throw std::invalid_argument("invalid spin projection; CoupledWaveFunctions");
+
+    // loop over A's projections
+    for (const auto& m_wps : A.projections()) {
+        // if empty, continue
+        if (m_wps.second.empty())
+            continue;
+        
+        // find appropriate spin projections 
+        auto it = B.projections().find(two_m - m_wps.first);
+        // if none, continue
+        if (it == B.projections().end() or it->second.empty())
+            continue;
+
+        // loop over wave products
+        for (const auto& a : m_wps.second)
+            for (const auto& b : it->second)
+                Products_.push_back({a, b});
+    }
 }
 
 }

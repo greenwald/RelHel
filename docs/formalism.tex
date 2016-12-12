@@ -1,0 +1,137 @@
+\documentclass[a4paper]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{parskip}
+\usepackage{xifthen}
+\usepackage{braket}
+
+\newcommand{\decay}[2]{\ensuremath{#1 \to #2}}
+\newcommand{\fourvec}[4]{\ensuremath{\left(#1; #2, #3, #4\right)}}
+\newcommand{\spinor}[4]{\begin{pmatrix}#1\\#2\\#3\\#4\end{pmatrix}}
+\newcommand{\cg}[6]{(#1, #2;\, #3, #4\, |\, #5, \ifthenelse{\isempty{#6}}{#2{+}#4}{#6})}
+
+\begin{document}
+
+Since we are concerned with two-body decay, all states will either be
+at rest or have momentum back-to-back (chosen to lie in the $\hat{z}$
+direction).
+
+Unit-spin wave functions:
+\begin{align}
+  \phi^\mu_\pm & = \frac{1}{\sqrt{2}}\fourvec{0}{\mp1}{i}{0} \\
+  \phi^\mu_0   & = \gamma\fourvec{\beta}{0}{0}{1}
+\end{align}
+
+Half-spin wave functions:
+\begin{align}
+  \psi^\alpha_+ & = \sqrt\frac{\gamma+1}{2}\spinor{1}{0}{\frac{\gamma\beta}{\gamma+1}}{0}\\
+  \psi^\alpha_- & = \sqrt\frac{\gamma+1}{2}\spinor{0}{1}{0}{\frac{\gamma\beta}{\gamma+1}}
+\end{align}
+
+From the unit-spin wave functions, we can build a wave function of
+arbitrary integer spin $J$:
+\begin{equation}
+  \Phi^{\mu_1\mu_2\dots\mu_J}_{M} = \sum_{\vec{m}} \prod_{i=1}^{J} \cg{i-1}{m_{0:i{-}1}}{1}{m_i}{i}{m_{0:i}}\, \phi^{\mu_i}_{m_i},
+\end{equation}
+where $m_{0:j} \equiv m_0 + \dots + m_j$ and $m_0 \equiv 0$; the sum is over $\vec m$ such that $m_{0:J} = M$.
+
+The product of Clebsch-Gordan coefficients is independent of the order
+of the couplings---it is only dependent on the numbers of each of spin
+projection involved: $N_+$, $N_0$, and $N_-$.
+
+Using the relations:
+\begin{eqnarray}
+  \cg{j}{m}{1}{\pm1}{j{+}1}{m{\pm}1} & = & \left[\frac{(j\pm m+1)(j\pm m+2)}{(2j+1)(2j+2)}\right]^{\frac{1}{2}}\\
+  \cg{j}{m}{1}{0}{j{+}1}{m} & = & \left[\frac{(j-m+1)(j+m+1)}{(2j+1)(j+1)}\right]^{\frac{1}{2}}
+\end{eqnarray}
+and ordering the wave functions such that the $N_+$ $\phi_+$ are
+first, then the $N_0$ $\phi_0$, and finally the $N_-$ $\phi_-$, we get:
+\begin{eqnarray}
+  C & \equiv & \prod_{i=1}^{J} \cg{i-1}{m_{0:i{-}1}}{1}{m_i}{i}{m_{0:i}} \\
+  C^2 & = & \frac{(J+M)!(J-M)!}{(2J)!}2^{N_0/2}
+\end{eqnarray}
+So:
+\begin{equation}
+  \Phi^{\mu_1\mu_2\dots\mu_J}_{M} = \left[\frac{(J+M)!(J-M)!}{(2J)!}\right]^{\frac{1}{2}} \sum_{\vec{m}}\left( 2^{N_0/2}\prod_{i=1}^{J}\phi^{\mu_i}_{m_i}\right).
+\end{equation}
+
+From the unit-spin and one-half-spin wave functions, we can build a
+wave function of arbitrary half-integer spin $J+1/2$:
+\begin{equation}
+  \Psi^{\mu_0\mu_1\dots\mu_J}_M = 
+  \sum_{\vec{m}} \psi^{\mu_0}_{m_0}\prod_{i=1}^{J} \cg{i{-}\tfrac{1}{2}}{m_{0:i{-}1}}{1}{m_i}{i{+}\tfrac{1}{2}}{m_{0:i}}\, \phi^{\mu_i}_{m_i},
+\end{equation}
+again with the sum over $\vec m$ being over vectors that fulfill
+$m_{0:J} = M$.  Since the order of the coupling does not matter, the
+half-spin coupling can also be arranged last:
+\begin{equation}
+  \Psi^{\mu_0\mu_1\dots\mu_J}_M = \sum_{\lambda=\pm\frac{1}{2}} \cg{J}{m}{\tfrac{1}{2}}{\lambda}{J{+}\tfrac{1}{2}}{M}\, \psi^{\mu_0}_{\lambda}\, \Phi_{m}^{\mu_1\dots\mu_J}
+\end{equation}
+with
+\begin{equation}
+  \cg{J}{m}{\tfrac{1}{2}}{\pm\tfrac{1}{2}}{J{+}\tfrac{1}{2}}{m\pm\tfrac{1}{2}} = \left[\frac{J\pm m +1}{2J+1}\right]^{\frac{1}{2}}
+\end{equation}
+
+For example, the wave functions for spin $3/2$ are
+\begin{equation}
+  \Psi^{\alpha\mu}_{\pm\frac{3}{2}} = \psi^\alpha_\pm \phi^\mu_\pm \qquad
+  \Psi^{\alpha\mu}_{\pm\frac{1}{2}} = \sqrt\frac{1}{3} \psi^\alpha_\mp\phi^\mu_\pm + \sqrt\frac{2}{3} \psi^\alpha_\pm\phi^\mu_0;
+\end{equation}
+and for spin $5/2$ are
+\begin{align}
+  \Psi^{\alpha\mu\nu}_{\pm\frac{5}{2}} & = \psi^\alpha_\pm \phi^\mu_\pm \phi^\nu_\pm \\
+  \Psi^{\alpha\mu\nu}_{\pm\frac{3}{2}} & = \sqrt\frac{1}{5} \psi^\alpha_\mp \phi^\mu_\pm \phi^\nu_\pm + \sqrt\frac{2}{5} \psi^\alpha_\pm (\phi^\mu_\pm \phi^\nu_0 + \phi^\mu_0 \phi^\nu_\pm) \\
+  \Psi^{\alpha\mu\nu}_{\pm\frac{1}{2}} & = \sqrt\frac{1}{5} \psi^\alpha_\mp  (\phi^\mu_\pm \phi^\nu_0 + \phi^\mu_0 \phi^\nu_\pm)
+  + \sqrt\frac{1}{10} \psi^\alpha_\pm (\phi^\mu_\pm \phi^\nu_\mp + 2\phi^\mu_0 \phi^\nu_0 + \phi^\mu_\mp\phi^\nu_\pm)
+\end{align}
+
+\section{Two-body decay}
+
+Let us describe the decay \decay{(0)}{(1)+(2)} of particles with spins
+$j_{0}$, $j_{1}$, and $j_{2}$. The initial state is taken at
+rest, so $\gamma_{0} = 1$ and $\beta_{0} = 0$. The final states,
+$(1)$ and $(2)$ are back to back, so in the common coordinate
+system---with $\hat{z}$ defined by the $(1)$ direction---the wave
+functions for $(2)$ have a negative sign appearing with all factors of
+$\beta_{2}$.
+
+The wave functions for the states, generically given for integer and
+half-integer spins are $\chi_{i}$ with spin projections $\lambda_{i}$.
+
+The state of total intrinsic spin, $S$, of the final states, with spin
+projection $m$, is
+\begin{align}
+  \Omega^{j_1j_2}_{sm} &\equiv \Omega_{sm}^{(\mu_0)\mu_1\dots\mu_{\lfloor j_1\rfloor}(\nu_0)\nu_1\dots\nu_{\lfloor j_2\rfloor}}\\
+    & = \sum_{m_1, m_2} \cg{j_1}{m_1}{j_2}{m_2}{s}{m}
+    \chi_{(1)m_1}^{(\mu_0)\mu_1\dots\mu_{\lfloor j_1\rfloor}}
+    \chi_{(2)m_2}^{(\nu_0)\nu_1\dots\nu_{\lfloor j_2\rfloor}}
+\end{align}
+
+The orbital angular momentum, $\ell$, is represented by the wave
+function
+\begin{equation}
+  \Phi_{\ell0} \equiv \Phi^{\mu_1\dots\mu_\ell}_0
+\end{equation}
+
+The decay amplitude has the form
+\begin{equation}
+  F^{\vec j}_{\vec m} = \sum_{\ell s} \cg{j_1}{m_1}{j_2}{{-}m_2}{s}{m_0} a^{\vec j}_{\ell s} A^{\vec j m_0}_{\ell s} r^\ell,
+\end{equation}
+where $a_{\ell s}$ is an empirical amplitude, $r$ is the breakup
+momentum in the $(0)$ rest frame, and $A^{\vec j m_0}_{\ell s}$
+covariant decacy amplitude for the decay
+\decay{\ket{j_0m_0}}{\ket{sm_0} + \ket{\ell0}}; $\ket{sm_0}$ is the
+coupling of $\ket{j_1m_1}$ and $\ket{j_2m_2}$ to total intrinsic spin
+$s$ and spin projection $m_0 = m_1 - m_2$, and $\ket{\ell0}$ is the
+state of total orbital angular momentum $\ell$.
+
+\begin{equation}
+  A^{\vec j m_0}_{\ell s} = p_0^n \otimes \Omega^{j_1j_2}_{sm_0} \otimes \Phi_{\ell 0} \otimes \chi_{(0)},
+\end{equation}
+with $n = (\sum j_i + \ell) \mod 2$
+
+\bibliography{formalism}
+\bibliographystyle{plain}
+
+\end{document}

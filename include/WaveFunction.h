@@ -102,38 +102,37 @@ struct OrbitalAngularMomentumWaveFunction : public WaveFunction {
 class CoupledWaveFunctions
 {
 public:
-    
+
+    using product_type = std::vector<WaveProduct>;
+
     /// Constructor
-    CoupledWaveFunctions(const WaveFunction& phi1, const WaveFunction& phi2, unsigned two_S, int delta);
+    CoupledWaveFunctions(const WaveFunction& A, const WaveFunction& B, unsigned two_s, int two_m);
 
-    /// \return array of coupled WaveFunction's
-    const std::array<WaveFunction, 2>& phi() const
-    { return Phi_; }
+    /// \return Projections_
+    const std::vector<product_type>& products() const
+    { return Products_; }
 
-    /// \return total coupled spin
-    const unsigned twoS() const
+    /// \return spin
+    const int spin() const
     { return TwoS_; }
 
-    /// \return spin projection
-    const int delta() const
-    { return Delta_; }
-    
 private:
 
-    /// First WaveFunction to couple
-    std::array<WaveFunction, 2> Phi_;
-
-    /// total coupled spin
+    /// spin
     unsigned TwoS_;
 
-    /// projection of total coupled spin
-    int Delta_;
-    
+    /// vector of products
+    std::vector<product_type> Products_;
 };
 
 /// \return rank of coupled wave functions
+inline unsigned rank(const CoupledWaveFunctions& cwf, size_t i)
+{ return (cwf.products().empty() or cwf.products()[0].empty()) ? 0 : rank(cwf.products()[0][i]); }
+
+/// \return rank of coupled wave functions
 inline unsigned rank(const CoupledWaveFunctions& cwf)
-{ return std::accumulate(cwf.phi().begin(), cwf.phi().end(), 0u, [](unsigned r, const WaveFunction& w){return r + rank(w);}); }
+{ return rank(cwf, 0) + rank(cwf, 1); }
+
 
 }
 

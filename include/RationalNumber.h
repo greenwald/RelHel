@@ -282,7 +282,6 @@ std::string to_sqrt_string(const std::array<RationalNumber, 2>& f);
 inline std::string to_sqrt_string(const RationalNumber& f)
 { return to_sqrt_string(factorize_sqrt(f)); }
 
-
 /// \return exponentiated rational number with sign preserved
 inline RationalNumber pow(const RationalNumber& f, unsigned n)
 { return RationalNumber(pow(f.numerator(), n), pow(f.denominator(), n), f.sign()); }
